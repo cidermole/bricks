@@ -910,7 +910,9 @@ class Reference(object):
         """
         rv = None
         path = object.__getattribute__(container, 'path')
-        current = self.findConfig(container)
+        #current = self.findConfig(container)
+        parentConfig = self.findConfig(container)
+        current = container
         while current is not None:
             if self.type == BACKTICK:
                 namespaces = object.__getattribute__(current, 'namespaces')
@@ -931,17 +933,18 @@ class Reference(object):
                     break
             else:
                 firstkey = self.elements[0]
-                if firstkey in current.resolving:
-                    current.resolving.remove(firstkey)
+                if firstkey in parentConfig.resolving:
+                    parentConfig.resolving.remove(firstkey)
                     raise ConfigResolutionError("Circular reference: %r" % firstkey)
-                current.resolving.add(firstkey)
+                parentConfig.resolving.add(firstkey)
                 key = firstkey
                 try:
+                    logger.debug("Trying to resolve key = %s on current = %s in container = %s", str(key), str(current), str(container))
                     rv = current[key]
                     for item in self.elements[1:]:
                         key = item[1]
                         rv = rv[key]
-                    current.resolving.remove(firstkey)
+                    parentConfig.resolving.remove(firstkey)
                     break
                 except ConfigResolutionError:
                     raise
@@ -949,8 +952,9 @@ class Reference(object):
                     logger.debug("Unable to resolve %r: %s", key, sys.exc_info()[1])
                     rv = None
                     pass
-                current.resolving.discard(firstkey)
-            current = self.findConfig(object.__getattribute__(current, 'parent'))
+                parentConfig.resolving.discard(firstkey)
+            # check parent container
+            current = object.__getattribute__(current, 'parent')
         if current is None:
             raise ConfigResolutionError("unable to evaluate %r in the configuration %s" % (self, path))
         return rv
