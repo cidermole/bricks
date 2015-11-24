@@ -121,6 +121,7 @@ DOLLAR = '$'
 TRUE = 'True'
 FALSE = 'False'
 NONE = 'None'
+UNDERSCORE = '_'
 
 WORDCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
 
@@ -913,7 +914,23 @@ class Reference(object):
         #current = self.findConfig(container)
         parentConfig = self.findConfig(container)
         current = container
+        elements = list(self.elements)
         while current is not None:
+            if elements[0] == UNDERSCORE:
+                #logger.debug("Walking up")
+                # walk up to parent container
+                current = object.__getattribute__(current, 'parent')
+                # remove '_', ('_', '.') from the front
+                #logger.debug("BEFORE Elements: %s, self.elements: %s", str(elements), str(self.elements))
+                elements = elements[1:]
+
+                assert(type(elements[0]) is tuple)
+                # replace the first word, which is not a tuple (why though?)
+                elements[0] = elements[0][1]
+
+                #logger.debug("Elements: %s, self.elements: %s", str(elements), str(self.elements))
+                continue
+
             if self.type == BACKTICK:
                 namespaces = object.__getattribute__(current, 'namespaces')
                 found = False
@@ -932,7 +949,7 @@ class Reference(object):
                 if found:
                     break
             else:
-                firstkey = self.elements[0]
+                firstkey = elements[0]
                 if firstkey in parentConfig.resolving:
                     parentConfig.resolving.remove(firstkey)
                     raise ConfigResolutionError("Circular reference: %r" % firstkey)
@@ -941,7 +958,7 @@ class Reference(object):
                 try:
                     logger.debug("Trying to resolve key = %s on current = %s in container = %s", str(key), str(current), str(container))
                     rv = current[key]
-                    for item in self.elements[1:]:
+                    for item in elements[1:]:
                         key = item[1]
                         rv = rv[key]
                     parentConfig.resolving.remove(firstkey)
