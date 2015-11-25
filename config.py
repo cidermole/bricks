@@ -132,6 +132,8 @@ elif os.name == 'mac':
 else:
     NEWLINE = '\n'
 
+import copy
+
 try:
     import encodings.utf_32
     has_utf32 = True
@@ -148,6 +150,35 @@ except ImportError:
 logger = logging.getLogger(__name__)
 if not logger.handlers:
     logger.addHandler(NullHandler())
+
+
+
+def resolveInheritance(merger, node):
+    """
+    Resolve 'extends:' inheritance of config node recursively.
+    @param node a config node of type config.Mapping
+    """
+    if 'extends' in node:
+        parent = node.extends
+
+        # recursively resolve ancestors' inheritance
+        parent = resolveInheritance(merger, parent)
+
+        # copy a config tree (avoid changing actual parent)
+        # this copies just one level (the level which is merged)
+        parent = copy.deepcopy(parent)
+
+        # merge child node into parent, allowing overrides
+        merger.merge(parent, node)
+        del parent['extends']
+
+        return parent
+
+    # just so semantics are consistent, always return a copy
+    # this copies just one level (the level which is merged)
+    return copy.deepcopy(node)
+
+
 
 class ConfigInputStream(object):
     """
@@ -501,6 +532,30 @@ class Mapping(Container):
     def __contains__(self, item):
         order = object.__getattribute__(self, 'order')
         return item in order
+
+    def __deepcopy__(self, memo=None):
+        return self.my_deepcopy(False, memo)
+
+    def my_deepcopy(self, inParts=False, memo=None):
+        result = Mapping(self.parent)
+        if memo is not None:
+            memo[id(self)] = result
+        for k in self.keys():
+            #setattr(result, k, copy.deepcopy(self[k], memo))
+
+            # half-assed copy: reference all keys, except from 'parts:'
+            # which must be copied recursively.
+            if k == 'parts':
+                assert(type(self[k]) is Mapping)
+                # for a double depth, create deep copies
+                kopi = self[k].my_deepcopy(True, memo)
+            elif inParts:
+                kopi = copy.deepcopy(self[k], memo)
+            else:
+                # shallow copy
+                kopi = self[k]
+            setattr(result, k, kopi)
+        return result
 
     def addMapping(self, key, value, comment, setting=False):
         """
@@ -1568,6 +1623,14 @@ def overwriteMergeResolve(map1, map2, key):
     if rv == "mismatch":
         rv = "overwrite"
     return rv
+
+def overwriteResolve(map1, map2, key):
+    """
+    Forces overwrite at all times. Avoids merging maps, evaluating
+    their keys before their time has come (enables us to inherit
+    lazy references without having to construct a dependency graph).
+    """
+    return "overwrite"
 
 class ConfigMerger(object):
     """
