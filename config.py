@@ -540,7 +540,17 @@ class Mapping(Container):
         result = Mapping(self.parent)
         if memo is not None:
             memo[id(self)] = result
+
+        # resolve inheritance
+        if 'extends' in self.keys():
+            kopi = copy.deepcopy(self['extends'], memo)
+            for k in kopi.keys():
+                setattr(result, k, kopi[k])
+
         for k in self.keys():
+            if k == 'extends':
+                # inheritance handled above
+                continue
             #setattr(result, k, copy.deepcopy(self[k], memo))
 
             # half-assed copy: reference all keys, except from 'parts:'
@@ -1011,7 +1021,7 @@ class Reference(object):
                 parentConfig.resolving.add(firstkey)
                 key = firstkey
                 try:
-                    logger.debug("Trying to resolve key = %s on current = %s in container = %s", str(key), str(current), str(container))
+                    logger.debug("Trying to resolve key = %s on current = %s in container = %s", str(key), str(current.path), str(container.path))
                     rv = current[key]
                     for item in elements[1:]:
                         key = item[1]
