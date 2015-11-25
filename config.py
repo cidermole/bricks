@@ -954,7 +954,7 @@ class Reference(object):
             container = object.__getattribute__(container, 'parent')
         return container
 
-    def resolve(self, container):
+    def resolve(self, container, checkedWithoutInheritance=False):
         """
         Resolve this instance in the context of a container.
 
@@ -1011,8 +1011,14 @@ class Reference(object):
                 parentConfig.resolving.add(firstkey)
                 key = firstkey
                 try:
-                    logger.debug("Trying to resolve key = %s on current = %s in container = %s", str(key), str(current), str(container))
-                    rv = current[key]
+                    logger.debug("Trying to resolve key = %s on current = %s in container = %s", str(key), str(current.path), str(container.path))
+                    fetchFrom = current
+                    if (not key in current.keys()) and key != 'extends' and checkedWithoutInheritance and 'extends' in current.keys():
+                        logger.debug(" key not found, trying to inherit it.")
+                        fetchFrom = resolveInheritance(MERGER, current)
+                        # TODO: overwrite keys of current? Caching in a sense.
+
+                    rv = fetchFrom[key]
                     for item in elements[1:]:
                         key = item[1]
                         rv = rv[key]
@@ -1028,7 +1034,11 @@ class Reference(object):
             # check parent container
             current = object.__getattribute__(current, 'parent')
         if current is None:
-            raise ConfigResolutionError("unable to evaluate %r in the configuration %s" % (self, path))
+            if checkedWithoutInheritance:
+                raise ConfigResolutionError("unable to evaluate %r in the configuration %s" % (self, path))
+            else:
+                # try again, with resolving inheritance
+                return self.resolve(container, True)
         return rv
 
     def __str__(self):
@@ -1727,6 +1737,8 @@ class ConfigMerger(object):
         @type obj2: any
         """
         raise ConfigError("unable to merge %r with %r" % (obj1, obj2))
+
+MERGER = ConfigMerger(resolver=overwriteResolve)
 
 class ConfigList(list):
     """
