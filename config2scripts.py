@@ -1,9 +1,9 @@
 #!/usr/bin/env python2
 
+from __future__ import print_function
+
 import config
 import os
-
-from __future__ import print_function
 
 
 class Brick(config.Mapping):
@@ -12,20 +12,26 @@ class Brick(config.Mapping):
     """
     def __init__(self, mapping):
         config.Container.__init__(self, mapping.parent)
-        self.path = mapping.path
-        self.data = mapping.data
-        self.order = mapping.order
-        self.comments = mapping.comments
+        object.__setattr__(self, 'path', mapping.path)
+        object.__setattr__(self, 'data', mapping.data)
+        object.__setattr__(self, 'order', mapping.order)
+        object.__setattr__(self, 'comments', mapping.comments)
 
         # rudimentarily assert that this config level is indeed a Brick
         assert('input' in self.data and 'output' in self.data)
 
     def referenceDependencyPath(self, relativePath):
+        """
+        Turns a config path referencing another Brick into a filesystem path
+        for adding dependencies to the runner system.
+        """
+
         # currently we only support dependencies of the form:
         # ['_', '_', 'Giza12', 'output', 'alignment']
+        #print(relativePath)
         if len(relativePath) == 5 and relativePath[0:2] == ['_', '_'] \
                 and relativePath[3] == 'output':
-            return os.path.join('..', [relativePath[2], 'brick'])
+            return os.path.join('..', relativePath[2], 'brick')
 
         return None
 
@@ -36,9 +42,9 @@ class Brick(config.Mapping):
         """
         dependencies = set()
 
-        for (key, inp) in self.data['input'].iteritems():
+        for (key, inp) in self.input.data.iteritems():
             if type(inp) is config.Reference:
-                relPath = inp.relativePath(self)
+                relPath = inp.relativePath(self.input)
                 dependencyPath = self.referenceDependencyPath(relPath)
                 if dependencyPath is not None:
                     dependencies.add(dependencyPath)
@@ -62,12 +68,13 @@ class ConfigGenerator(object):
         its parts.
         """
         # we know / assume that this brick is a Brick.
-        brick = Brick(cfgBrick)
         print('Brick %s...' % cfgBrick.path)
+        brick = Brick(cfgBrick)
         print(brick.inputDependencies())
 
-        for part in brick.parts:
-            self.generateBricks(part)
+        if 'parts' in brick:
+            for part in brick.parts:
+                self.generateBricks(brick.parts[part])
 
 
 if __name__ == '__main__':
