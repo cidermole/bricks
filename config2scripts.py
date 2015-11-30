@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import config
 import os
+import jinja2
 
 
 class Brick(config.Mapping):
@@ -157,6 +158,7 @@ class Brick(config.Mapping):
 class ConfigGenerator(object):
     def __init__(self, cfg):
         self.experiment = cfg.Experiment.copyExceptRefs(cfg, 'Experiment')
+        self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath='.'))
 
     def generateBricks(self, cfgBrick):
         """
@@ -172,6 +174,17 @@ class ConfigGenerator(object):
             print('output', brick.outputDependencies())
 
         brick.inputSymlinks()
+
+        template = self.env.get_template('brick.do.jinja')
+        brickDo = template.render({
+            # all the Bricks we depend on
+            'inputDependencies': list(brick.inputDependencies()),
+            'outputDependencies': list(brick.outputDependencies()),
+
+            'brick': cfgBrick.path
+        })
+        with open(os.path.join(brick.filesystemPath(), 'brick.do'), 'w') as fo:
+            fo.write(brickDo)
 
         if 'parts' in brick:
             for part in brick.parts:

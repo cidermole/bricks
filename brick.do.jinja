@@ -1,0 +1,12 @@
+# input dependencies
+{%- for dependency in inputDependencies %}
+redo-ifchange {{ dependency }}
+{%- endfor %}
+
+# output dependencies (mainly/only for Experiment?)
+{%- for dependency in outputDependencies %}
+redo-ifchange {{ dependency }}
+{%- endfor %}
+
+# mark as completed
+echo "{{ brick }}"
