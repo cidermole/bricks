@@ -1028,7 +1028,7 @@ class Reference(object):
         the container or any of its nodes, and returns the successful
         relative path.
         """
-        rv, nup = self.resolve2(container)
+        rv, nup = self.resolve2(container, resolveRefs=False)
         result = []
         result += ['_'] if nup > 0 else []
         result += [('.', '_')] * (nup - 1)
@@ -1051,7 +1051,7 @@ class Reference(object):
     def relativePath(self, container):
         return self.elements2path(self.relativeElements(container))
 
-    def resolve2(self, container):
+    def resolve2(self, container, resolveRefs=True):
         """
         Resolve this instance in the context of a container.
 
@@ -1110,10 +1110,10 @@ class Reference(object):
                 key = firstkey
                 try:
                     logger.debug("Trying to resolve key = %s on current = %s in container = %s", str(key), str(current.path), str(container.path))
-                    rv = current[key]
+                    rv = current[key] if resolveRefs else current.data[key]
                     for item in elements[1:]:
                         key = item[1]
-                        rv = rv[key]
+                        rv = rv[key] if resolveRefs else rv.data[key]
                     parentConfig.resolving.remove(firstkey)
                     break
                 except ConfigResolutionError:

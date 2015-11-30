@@ -35,13 +35,21 @@ class Brick(config.Mapping):
         Turns a config path referencing another Brick into a filesystem path.
         Used for adding dependencies to the runner system.
         """
-
-        # currently we only support dependencies of the form:
-        # ['_', '_', 'Giza12', 'output', 'alignment']
         #print(relativePath)
+
+        # currently we only support dependencies of the form ...:
+
+        # ['_', '_', 'Giza12', 'output', 'alignment']
+        # used for input dependencies
         if len(relativePath) == 5 and relativePath[0:2] == ['_', '_'] \
                 and relativePath[3] == 'output':
             return os.path.join('..', relativePath[2], 'brick')
+
+        # ['_', 'parts', 'WordAligner0', 'output', 'alignment']
+        # used for output dependencies
+        if len(relativePath) == 5 and relativePath[0:2] == ['_', 'parts'] \
+                and relativePath[3] == 'output':
+            return os.path.join(relativePath[2], 'brick')
 
         return None
 
@@ -58,9 +66,9 @@ class Brick(config.Mapping):
                 # we may be referencing another Brick, which we then
                 # need to add as a dependency.
                 relPath = inp.relativePath(self.input)
-                dependencyPath = self.referenceDependencyPath(relPath)
-                if dependencyPath is not None:
-                    dependencies.add(dependencyPath)
+                path = self.referenceDependencyPath(relPath)
+                if path is not None:
+                    dependencies.add(path)
             elif type(inp) is str:
                 # a direct filename specification.
                 # check if file exists in FS
@@ -71,6 +79,30 @@ class Brick(config.Mapping):
                 # no specification at all, e.g. input: { src }
                 # here, config parser falls back to defining a bool src=True
                 raise ValueError("input %s of Brick %s is neither connected nor defined as a file." % (key, self.path))
+
+        return dependencies
+
+    def outputDependencies(self):
+        """
+        Get all our Bricks (parts) which produce our output.
+        In practice, this should only be necessary for Experiment itself.
+        """
+        dependencies = set()
+
+        # walk this Brick's outputs without resolving config keys
+        for (key, outp) in self.output.data.iteritems():
+            if type(outp) is config.Reference:
+                # we may be referencing another Brick, which we then
+                # need to add as a dependency.
+                relPath = outp.relativePath(self.output)
+                path = self.referenceDependencyPath(relPath)
+                if path is not None:
+                    dependencies.add(path)
+            elif type(outp) is bool:
+                # no specification at all, e.g. output: { trg }
+                # here, config parser falls back to defining a bool trg=True
+                # (not an output dependency)
+                pass
 
         return dependencies
 
@@ -86,7 +118,10 @@ class ConfigGenerator(object):
         # we know / assume that this brick is a Brick.
         print('Brick %s...' % cfgBrick.path)
         brick = Brick(cfgBrick)
-        print(brick.inputDependencies())
+        if len(brick.inputDependencies()) > 0:
+            print('input', brick.inputDependencies())
+        if len(brick.outputDependencies()) > 0:
+            print('output', brick.outputDependencies())
 
         if 'parts' in brick:
             for part in brick.parts:
