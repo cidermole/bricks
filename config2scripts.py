@@ -32,7 +32,7 @@ class Brick(config.Mapping):
         path = [part for part in configPath if part != "parts"]
         return os.path.join(*path)
 
-    def referenceDependencyPath(self, relativePath, brickOnly=False):
+    def referenceDependencyPath(self, relativePath, brickOnly=True):
         """
         Turns a config path referencing another Brick into a filesystem path.
         Used for adding dependencies to the runner system.
@@ -85,7 +85,7 @@ class Brick(config.Mapping):
                 # we may be referencing another Brick, which we then
                 # need to add as a dependency.
                 relPath = inp.relativePath(self.input)
-                path = self.referenceDependencyPath(relPath, brickOnly=True)
+                path = self.referenceDependencyPath(relPath)
                 if path is not None:
                     dependencies.add(path)
             elif type(inp) is str:
@@ -114,7 +114,7 @@ class Brick(config.Mapping):
                 # referencing another Brick
                 #linkSource = self.filesystemPath(inp.path)
                 relPath = inp.relativePath(self.input)
-                linkSource = self.referenceDependencyPath(relPath)
+                linkSource = self.referenceDependencyPath(relPath, brickOnly=False)
             elif type(inp) is str:
                 # a direct filename specification.
                 print("STR", inp)
@@ -123,6 +123,12 @@ class Brick(config.Mapping):
             if linkSource is not None:
                 linkTarget = os.path.join(fsPath, 'input', key)
                 print("%s -> %s" % (linkSource, linkTarget))
+
+                if not os.path.exists(os.path.dirname(linkTarget)):
+                    os.makedirs(os.path.dirname(linkTarget))
+                if os.path.islink(linkTarget):
+                    os.unlink(linkTarget)
+                os.symlink(linkSource, linkTarget)
 
     def outputDependencies(self):
         """
