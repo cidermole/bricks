@@ -20,36 +20,55 @@ class Brick(config.Mapping):
         # rudimentarily assert that this config level is indeed a Brick
         assert('input' in self.data and 'output' in self.data)
 
-    def filesystemPath(self):
+    def filesystemPath(self, configPath=None):
         """
         Map the config path to a relative filesystem path of the experiment
         directory which will contain this Brick's data for the runner system.
         """
         # replace .parts: shortens "Experiment.parts.WordAligner0.parts.Giza12"
         # into "Experiment.WordAligner0.Giza12"
-        path = [part for part in self.path.split('.') if part != "parts"]
-        return os.path.join(path)
+        configPath = self.path if configPath is None else configPath
+        configPath = configPath.split('.')
+        path = [part for part in configPath if part != "parts"]
+        return os.path.join(*path)
 
-    def referenceDependencyPath(self, relativePath):
+    def referenceDependencyPath(self, relativePath, brickOnly=False):
         """
         Turns a config path referencing another Brick into a filesystem path.
         Used for adding dependencies to the runner system.
+        @param relativePath list of node names along config path
+        @param brickOnly    only reference the brick itself, not the actual input/output file
         """
-        #print(relativePath)
+        #print(brickOnly, relativePath)
 
         # currently we only support dependencies of the form ...:
 
         # ['_', '_', 'Giza12', 'output', 'alignment']
         # used for input dependencies
         if len(relativePath) == 5 and relativePath[0:2] == ['_', '_'] \
-                and relativePath[3] == 'output':
-            return os.path.join('..', relativePath[2], 'brick')
+                and relativePath[3] != '_' and relativePath[3] == 'output':
+            if brickOnly:
+                return os.path.join('..', relativePath[2], 'brick')
+            else:
+                return os.path.join(*(['..', '..'] + relativePath[2:4]))
+
+        # ['_', '_', '_', 'input', 'src']
+        # used in referencing the Brick's input in parts
+        if len(relativePath) == 5 and relativePath[0:3] == ['_', '_', '_'] \
+                and relativePath[3] in ['output', 'input']:
+            if brickOnly:
+                return None
+            else:
+                return os.path.join(*(['..', '..'] + relativePath[3:5]))
 
         # ['_', 'parts', 'WordAligner0', 'output', 'alignment']
         # used for output dependencies
         if len(relativePath) == 5 and relativePath[0:2] == ['_', 'parts'] \
                 and relativePath[3] == 'output':
-            return os.path.join(relativePath[2], 'brick')
+            if brickOnly:
+                return os.path.join(relativePath[2], 'brick')
+            else:
+                return None
 
         return None
 
@@ -66,7 +85,7 @@ class Brick(config.Mapping):
                 # we may be referencing another Brick, which we then
                 # need to add as a dependency.
                 relPath = inp.relativePath(self.input)
-                path = self.referenceDependencyPath(relPath)
+                path = self.referenceDependencyPath(relPath, brickOnly=True)
                 if path is not None:
                     dependencies.add(path)
             elif type(inp) is str:
@@ -81,6 +100,29 @@ class Brick(config.Mapping):
                 raise ValueError("input %s of Brick %s is neither connected nor defined as a file." % (key, self.path))
 
         return dependencies
+
+    def inputSymlinks(self):
+        """
+        Create symlinks for all inputs.
+        """
+        fsPath = self.filesystemPath()
+
+        # walk this Brick's inputs without resolving config keys
+        for (key, inp) in self.input.data.iteritems():
+            linkSource = None
+            if type(inp) is config.Reference:
+                # referencing another Brick
+                #linkSource = self.filesystemPath(inp.path)
+                relPath = inp.relativePath(self.input)
+                linkSource = self.referenceDependencyPath(relPath)
+            elif type(inp) is str:
+                # a direct filename specification.
+                print("STR", inp)
+                linkSource = inp
+
+            if linkSource is not None:
+                linkTarget = os.path.join(fsPath, 'input', key)
+                print("%s -> %s" % (linkSource, linkTarget))
 
     def outputDependencies(self):
         """
@@ -122,6 +164,8 @@ class ConfigGenerator(object):
             print('input', brick.inputDependencies())
         if len(brick.outputDependencies()) > 0:
             print('output', brick.outputDependencies())
+
+        brick.inputSymlinks()
 
         if 'parts' in brick:
             for part in brick.parts:
