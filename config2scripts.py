@@ -20,10 +20,20 @@ class Brick(config.Mapping):
         # rudimentarily assert that this config level is indeed a Brick
         assert('input' in self.data and 'output' in self.data)
 
+    def filesystemPath(self):
+        """
+        Map the config path to a relative filesystem path of the experiment
+        directory which will contain this Brick's data for the runner system.
+        """
+        # replace .parts: shortens "Experiment.parts.WordAligner0.parts.Giza12"
+        # into "Experiment.WordAligner0.Giza12"
+        path = [part for part in self.path.split('.') if part != "parts"]
+        return os.path.join(path)
+
     def referenceDependencyPath(self, relativePath):
         """
-        Turns a config path referencing another Brick into a filesystem path
-        for adding dependencies to the runner system.
+        Turns a config path referencing another Brick into a filesystem path.
+        Used for adding dependencies to the runner system.
         """
 
         # currently we only support dependencies of the form:
@@ -42,19 +52,25 @@ class Brick(config.Mapping):
         """
         dependencies = set()
 
+        # walk this Brick's inputs without resolving config keys
         for (key, inp) in self.input.data.iteritems():
             if type(inp) is config.Reference:
+                # we may be referencing another Brick, which we then
+                # need to add as a dependency.
                 relPath = inp.relativePath(self.input)
                 dependencyPath = self.referenceDependencyPath(relPath)
                 if dependencyPath is not None:
                     dependencies.add(dependencyPath)
             elif type(inp) is str:
+                # a direct filename specification.
                 # check if file exists in FS
                 # TODO: relative paths?
                 if not os.path.exists(inp):
                     raise ValueError("input %s of Brick %s = %s does not exist in file system." % (key, self.path, inp))
             elif type(inp) is bool:
-                raise ValueError("input %s of Brick %s is neither connected nor defined." % (key, self.path))
+                # no specification at all, e.g. input: { src }
+                # here, config parser falls back to defining a bool src=True
+                raise ValueError("input %s of Brick %s is neither connected nor defined as a file." % (key, self.path))
 
         return dependencies
 
