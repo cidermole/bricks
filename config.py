@@ -536,8 +536,13 @@ class Mapping(Container):
     def __deepcopy__(self, memo=None):
         return self.my_deepcopy(False, memo)
 
+    #def my_name(self):
+    #    path = self.path
+    #    return path.split('.')[-1]
+
     def my_deepcopy(self, inParts=False, memo=None):
         result = Mapping(self.parent)
+        #result.setPath(self.path)
         if memo is not None:
             memo[id(self)] = result
 
@@ -559,13 +564,54 @@ class Mapping(Container):
                 assert(type(self[k]) is Mapping)
                 # for a double depth, create deep copies
                 kopi = self[k].my_deepcopy(True, memo)
+                kopi.parent = result
+                kopi.setPath(makePath(self.path, k))
             elif inParts:
                 kopi = copy.deepcopy(self[k], memo)
+                kopi.parent = result
+                kopi.setPath(makePath(self.path, k))
             else:
                 # shallow copy
                 kopi = self[k]
             setattr(result, k, kopi)
         return result
+
+    # rather, copyKeepRefs() - copy without resolving References
+    def copyExceptRefs(self, parent=None, key=None, memo=None):
+        # parent == newParent
+        result = Mapping(parent)
+        if parent is not None:
+            result.setPath(makePath(parent.path, key))
+        if memo is not None:
+            memo[id(self)] = result
+            # TODO: use memo below.
+
+        # resolve inheritance
+        if 'extends' in self.keys():
+            #kopi = copy.deepcopy(self['extends'], memo)
+            kopi = self['extends'].copyExceptRefs(parent, key, memo)
+            for k in kopi.keys():
+                setattr(result, k, kopi[k])
+
+        # recursively copy the rest of our keys
+        for k in self.keys():
+            if k == 'extends':
+                # inheritance handled above
+                continue
+
+            if type(self.data[k]) is Reference:
+                kopi = copy.deepcopy(self.data[k], memo)
+                kopi.config = kopi.findConfig(result)
+            elif type(self.data[k]) is Mapping:
+                kopi = self.data[k].copyExceptRefs(result, k, memo)
+            else:
+                # hopefully only primitive types here
+                kopi = copy.deepcopy(self.data[k], memo)
+            setattr(result, k, kopi)
+
+        return result
+
+
 
     def addMapping(self, key, value, comment, setting=False):
         """
@@ -940,6 +986,14 @@ class Reference(object):
         self.type = type
         self.elements = [ident]
 
+    def __deepcopy__(self, memo=None):
+        result = Reference(self.config, self.type, self.elements[0])
+        #result.setPath(self.path)
+        if memo is not None:
+            memo[id(self)] = result
+        result.elements = copy.deepcopy(self.elements, memo)
+        return result
+
     def addElement(self, type, ident):
         """
         Add an element to the reference.
@@ -965,16 +1019,50 @@ class Reference(object):
         return container
 
     def resolve(self, container):
+        return self.resolve2(container)[0]
+
+    def relativeElements(self, container):
+        """
+        Resolve the relative path of this reference, relative to
+        the given container. Attempts to resolve this reference in
+        the container or any of its nodes, and returns the successful
+        relative path.
+        """
+        rv, nup = self.resolve2(container)
+        result = []
+        result += ['_'] if nup > 0 else []
+        result += [('.', '_')] * (nup - 1)
+        result += [('.', self.elements[0])] if nup > 0 else [self.elements[0]]
+        result += self.elements[1:]
+        return result
+
+    def elements2path(self, elements):
+        """
+        Turn an elements list  ['_', ('.', '_'), ('.', 'input'), ('.', 'src')]
+        to a path ['_', '_', 'input', 'src']
+        """
+        result = list(elements[0:1])
+        result += [e[1] for e in elements[1:]]
+        return result
+
+    def path(self):
+        return self.elements2path(self.elements)
+
+    def relativePath(self, container):
+        return self.elements2path(self.relativeElements(container))
+
+    def resolve2(self, container):
         """
         Resolve this instance in the context of a container.
 
         @param container: The container to resolve from.
         @type container: L{Container}
-        @return: The resolved value.
+        @return: The resolved value, nup: number of ancestors to walk up
         @rtype: any
         @raise ConfigResolutionError: If resolution fails.
         """
         rv = None
+        nup = 0
         path = object.__getattribute__(container, 'path')
         #current = self.findConfig(container)
         parentConfig = self.findConfig(container)
@@ -1037,9 +1125,10 @@ class Reference(object):
                 parentConfig.resolving.discard(firstkey)
             # check parent container
             current = object.__getattribute__(current, 'parent')
+            nup += 1
         if current is None:
             raise ConfigResolutionError("unable to evaluate %r in the configuration %s" % (self, path))
-        return rv
+        return rv, nup
 
     def __str__(self):
         s = self.elements[0]
