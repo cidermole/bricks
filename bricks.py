@@ -90,7 +90,8 @@ class Brick(config.Mapping):
         # into "Experiment.WordAligner0.Giza12"
         configPath = self.path if configPath is None else configPath
         configPath = configPath.split('.')
-        path = [part for part in configPath if part != "parts"]
+        path = ['0']
+        path += [part for part in configPath if part != "parts"]
         return os.path.join(*path)
 
     def referenceDependencyPath(self, relativePath, brickOnly=True):
@@ -295,6 +296,11 @@ class ConfigGenerator(object):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        sys.stderr.write('usage: %s <example.cfg>\n' % sys.argv[0])
+        sys.stderr.write('generates the experiment in current working directory.\n')
+        sys.exit(1)
+
     # search path for both global config includes @<GeneralBricks.cfg>
     # and Jinja templates.
     appDir = os.path.dirname(os.path.realpath(__file__))
@@ -302,3 +308,6 @@ if __name__ == '__main__':
 
     gen = ConfigGenerator(sys.argv[1], searchPath)
     gen.generateBricks(gen.experiment)
+
+    # ~/mmt/redo/redo == redo
+    sys.stderr.write('Now run the experiment using $ ~/mmt/redo/redo 0/Experiment/brick\n')
