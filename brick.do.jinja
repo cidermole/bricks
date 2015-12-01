@@ -1,12 +1,31 @@
-# input dependencies
-{%- for dependency in inputDependencies %}
-redo-ifchange {{ dependency }}
-{%- endfor %}
+{#
+ # Basic brick.do shell script template, written in Jinja2
+ # (see http://jinja.pocoo.org/docs/dev/templates/). This is
+ # a Jinja2 comment that is not output into the generated file.
+ #}
 
-# output dependencies (mainly/only for Experiment?)
-{%- for dependency in outputDependencies %}
-redo-ifchange {{ dependency }}
-{%- endfor %}
+{#- *** Add notice about our origins to generated files. *** -#}
 
-# mark as completed
-echo "{{ brick }}"
+# If this shell script is called 'brick.do', it was generated
+# by 'bricks.py' from templates and an experiment config file.
+
+{#- *** End of notice. *** #}
+
+{% block InputDependencies %}
+    # input dependencies
+    {%- for dependency in inputDependencies %}
+        redo-ifchange {{ dependency }}
+    {%- endfor %}
+{%- endblock %}
+
+{% block OutputDependencies %}
+    # output dependencies (mainly/only for Experiment?)
+    {%- for dependency in outputDependencies %}
+        redo-ifchange {{ dependency }}
+    {%- endfor %}
+{%- endblock %}
+
+{% block Work %}
+    # mark as completed (stdout goes to our target file 'brick')
+    echo "{{ brick }}"
+{%- endblock %}

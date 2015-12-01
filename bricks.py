@@ -160,6 +160,23 @@ class ConfigGenerator(object):
         self.experiment = cfg.Experiment.copyExceptRefs(cfg, 'Experiment')
         self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath='.'))
 
+    def replaceFileContents(self, fileName, newContents):
+        """
+        Only replace fileName with newContents if the contents differ
+        from what the file currently contains.
+        This avoids changing mtime of the file and thus avoids the
+        runner system re-running bricks which haven't changed.
+        """
+        if os.path.exists(fileName):
+            with open(fileName) as fi:
+                oldContents = fi.read()
+            if oldContents == newContents:
+                # no need to update the file
+                return
+
+        with open(fileName, 'w') as fo:
+            fo.write(newContents)
+
     def generateRedoFile(self, brick):
         """
         Generate a redo file from template for this Brick.
@@ -172,8 +189,7 @@ class ConfigGenerator(object):
 
             'brick': brick.path
         })
-        with open(os.path.join(brick.filesystemPath(), 'brick.do'), 'w') as fo:
-            fo.write(brickDo)
+        self.replaceFileContents(os.path.join(brick.filesystemPath(), 'brick.do'), brickDo)
 
     def generateBricks(self, cfgBrick):
         """
