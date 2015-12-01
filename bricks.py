@@ -19,6 +19,10 @@
 #     Brick inputs and outputs are symlinked relative to the Brick
 #     working directory, e.g. input/src input/trg output/alignment
 #
+#     Use absolute paths for Experiment input files residing somewhere
+#     outside the experiment.
+#       note: relative paths to input files are not resolved yet.
+#       They currently are relative to the Brick working directory.
 #
 # Brick script execution
 # ----------------------
