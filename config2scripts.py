@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import config
 import os
+import sys
 import jinja2
 
 
@@ -92,7 +93,6 @@ class Brick(config.Mapping):
             elif type(inp) is str:
                 # a direct filename specification.
                 # check if file exists in FS
-                # TODO: relative paths?
                 if not os.path.exists(inp):
                     raise ValueError("input %s of Brick %s = %s does not exist in file system." % (key, self.path, inp))
             elif type(inp) is bool:
@@ -102,7 +102,7 @@ class Brick(config.Mapping):
 
         return dependencies
 
-    def inputSymlinks(self):
+    def createInputSymlinks(self):
         """
         Create symlinks for all inputs.
         """
@@ -118,12 +118,12 @@ class Brick(config.Mapping):
                 linkSource = self.referenceDependencyPath(relPath, brickOnly=False)
             elif type(inp) is str:
                 # a direct filename specification.
-                print("STR", inp)
+                #sys.stderr.write("STR %s\n" % inp)
                 linkSource = inp
 
             if linkSource is not None:
                 linkTarget = os.path.join(fsPath, 'input', key)
-                print("%s -> %s" % (linkSource, linkTarget))
+                #sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
 
                 if not os.path.exists(os.path.dirname(linkTarget)):
                     os.makedirs(os.path.dirname(linkTarget))
@@ -160,31 +160,39 @@ class ConfigGenerator(object):
         self.experiment = cfg.Experiment.copyExceptRefs(cfg, 'Experiment')
         self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath='.'))
 
-    def generateBricks(self, cfgBrick):
+    def generateRedoFile(self, brick):
         """
-        Recursively generate a config for this Brick and all
-        its parts.
+        Generate a redo file from template for this Brick.
         """
-        # we know / assume that this brick is a Brick.
-        print('Brick %s...' % cfgBrick.path)
-        brick = Brick(cfgBrick)
-        if len(brick.inputDependencies()) > 0:
-            print('input', brick.inputDependencies())
-        if len(brick.outputDependencies()) > 0:
-            print('output', brick.outputDependencies())
-
-        brick.inputSymlinks()
-
         template = self.env.get_template('brick.do.jinja')
         brickDo = template.render({
             # all the Bricks we depend on
             'inputDependencies': list(brick.inputDependencies()),
             'outputDependencies': list(brick.outputDependencies()),
 
-            'brick': cfgBrick.path
+            'brick': brick.path
         })
         with open(os.path.join(brick.filesystemPath(), 'brick.do'), 'w') as fo:
             fo.write(brickDo)
+
+    def generateBricks(self, cfgBrick):
+        """
+        Recursively generate a config for this Brick and all
+        its parts.
+        @param cfgBrick config.Mapping entry for this Brick.
+        """
+        # we know / assume that this config.Mapping is a Brick.
+        brick = Brick(cfgBrick)
+
+        # nice debug prints
+        sys.stderr.write('%s\n' % cfgBrick.path)
+        if len(brick.inputDependencies()) > 0:
+            sys.stderr.write('  input %s\n' % str(brick.inputDependencies()))
+        if len(brick.outputDependencies()) > 0:
+            sys.stderr.write('  output %s\n' % str(brick.outputDependencies()))
+
+        brick.createInputSymlinks()
+        self.generateRedoFile(brick)
 
         if 'parts' in brick:
             for part in brick.parts:
@@ -193,6 +201,5 @@ class ConfigGenerator(object):
 
 if __name__ == '__main__':
     cfg = config.Config(file('global.cfg'))
-    #e = cfg.Experiment.copyExceptRefs(cfg, 'Experiment')
     gen = ConfigGenerator(cfg)
     gen.generateBricks(gen.experiment)
