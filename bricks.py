@@ -231,6 +231,10 @@ class Brick(config.Mapping):
         # TODO: unify!
         fsPath = self.filesystemPath()
 
+        # ensure there is always an output folder for scripts to write to
+        if not os.path.exists(os.path.join(fsPath, 'output')):
+            os.makedirs(os.path.join(fsPath, 'output'))
+
         # walk this Brick's outputs without resolving config keys
         for (key, outp) in self.output.data.iteritems():
             #print("key:", key, type(outp), self.path)
