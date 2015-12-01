@@ -8,7 +8,7 @@
 # * Including config files
 #   * relative path: key: @"include.cfg"
 #       (FIXME) currently refers to the working directory. Should be relative from the config file location.
-#   * absolute path: key: @<GeneralBricks.cfg>
+#   * absolute path: key: @<Bricks.cfg>
 #       searched for in bricks/ and can be used from anywhere.
 #
 # * Jinja template files
@@ -359,7 +359,7 @@ if __name__ == '__main__':
         sys.stderr.write('generates the experiment in current working directory.\n')
         sys.exit(1)
 
-    # search path for both global config includes @<GeneralBricks.cfg>
+    # search path for both global config includes @<Bricks.cfg>
     # and Jinja templates.
     appDir = os.path.dirname(os.path.realpath(__file__))
     searchPath = os.path.join(appDir, 'bricks')
