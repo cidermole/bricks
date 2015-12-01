@@ -195,7 +195,14 @@ class ConfigGenerator(object):
             template = self.env.get_template('brick.do.jinja')
 
         # Render the Jinja template
-        brickDo = template.render({'brick': brick})
+        brickDo = template.render({
+            'brick': brick
+
+            # convenience strings. Maybe shortest to hardcode instead
+            # (symlinks ensure correctness anyway).
+            #'input': {k: 'input/%s' % k for k in brick.input.data.keys()},
+            #'output': {k: 'output/%s' % k for k in brick.output.data.keys()}
+        })
 
         # create/replace redo file, if necessary
         targetFile = os.path.join(brick.filesystemPath(), 'brick.do')
