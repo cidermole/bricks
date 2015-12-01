@@ -1,4 +1,63 @@
 #!/usr/bin/env python2
+#
+# bricks.py prepares an SMT experiment from shell script templates and
+# a configuration file.
+#
+# File Paths
+# ----------
+# * Including config files
+#   * relative path: key: @"include.cfg"
+#       (FIXME) currently refers to the working directory. Should be relative from the config file location.
+#   * absolute path: key: @<GeneralBricks.cfg>
+#       searched for in bricks/ and can be used from anywhere.
+#
+# * Jinja template files
+#     Jinja2 has its own search path implementation. We add bricks/
+#     to its search path.
+#
+# * Input and output files in Bricks
+#     Brick inputs and outputs are symlinked relative to the Brick
+#     working directory, e.g. input/src input/trg output/alignment
+#
+#
+# Brick script execution
+# ----------------------
+# Happens via 'redo', each script is run in its Brick working directory.
+# 'bricks.py' sets up a hierarchy of working directories for Bricks,
+# with symlinks of inputs (and outputs for Bricks containing parts.)
+#
+# number of run (always 0 currently, incremental experiments not implemented)
+# |
+# v   name of Brick (outermost Brick is always called Experiment)
+# 0/  v
+#     Experiment/
+#         input/rawCorpusSource -> /data/raw.corpus.en
+#         input/rawCorpusTarget -> /data/raw.corpus.it
+#         output/alignment -> WordAligner0/output/alignment
+#
+#         PrepSrc/
+#             input/raw -> ../../input/rawCorpusSource
+#             output/truecased            < not actually created by bricks.py
+#             <...>
+#
+#         PrepTrg/
+#             input/raw -> ../../input/rawCorpusTarget
+#             output/truecased            < not actually created by bricks.py
+#             <...>
+#
+#         WordAligner0/
+#             # links dangle (target doesn't exist) until actual run of Prep*
+#             input/src -> ../../PrepSrc/output/truecased
+#             input/trg -> ../../PrepTrg/output/truecased
+#
+#             Giza12/
+#                 input/crp1 -> ../../input/src
+#                 <...>
+#
+# The idea for incremental experiments will be to check via 'redo' if targets
+# need to be run, and if they don't, we can symlink their input back to the
+# previous run.
+#
 
 from __future__ import print_function
 
@@ -156,7 +215,9 @@ class Brick(config.Mapping):
         return dependencies
 
 class ConfigGenerator(object):
-    def __init__(self, cfg, searchPath):
+    def __init__(self, cfgFileName, searchPath):
+        configSearchPath = config.ConfigSearchPath([searchPath])
+        cfg = config.Config(file(cfgFileName), searchPath=configSearchPath)
         self.experiment = cfg.Experiment.copyExceptRefs(cfg, 'Experiment')
         self.searchPath = searchPath
         self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchPath))
@@ -239,7 +300,5 @@ if __name__ == '__main__':
     appDir = os.path.dirname(os.path.realpath(__file__))
     searchPath = os.path.join(appDir, 'bricks')
 
-    configSearchPath = config.ConfigSearchPath([searchPath])
-    cfg = config.Config(file('global.cfg'), searchPath=configSearchPath)
-    gen = ConfigGenerator(cfg, searchPath)
+    gen = ConfigGenerator('global.cfg', searchPath)
     gen.generateBricks(gen.experiment)
