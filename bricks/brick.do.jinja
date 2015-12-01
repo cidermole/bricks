@@ -23,7 +23,7 @@
 {%- endblock %}
 
 {% block OutputDependencies %}
-    # output dependencies (mainly/only for Experiment?)
+    # output dependencies (for Bricks containing several parts)
     {%- for dependency in brick.outputDependencies() %}
         echo {{ dependency }}
     {%- endfor %}

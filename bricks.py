@@ -138,138 +138,85 @@ class Brick(config.Mapping):
 
         return None
 
+
     def inputDependencies(self):
+        return self.dependencies('input')
+
+    def outputDependencies(self):
+        return self.dependencies('output')
+
+    def dependencies(self, inout):
         """
         Get all Bricks which we depend on, as a list of relative
-        file paths for the runner system.
+        file paths for the runner system 'redo'.
+        Used from 'brick.do.jinja' to obtain dependencies for 'redo'.
+
+        @param inout either 'input' or 'output'
         """
+        inoutMapping = {'input': self.input, 'output': self.output}[inout]
         dependencies = set()
 
         # walk this Brick's inputs without resolving config keys
-        for (key, inp) in self.input.data.iteritems():
-            if type(inp) is config.Reference:
+        for (key, anyput) in inoutMapping.data.iteritems():
+            if type(anyput) is config.Reference:
                 # we may be referencing another Brick, which we then
                 # need to add as a dependency.
-                relPath = inp.relativePath(self.input)
+                relPath = anyput.relativePath(inoutMapping)
                 path = self.referenceDependencyPath(relPath)
                 if path is not None:
                     dependencies.add(path)
-            elif type(inp) is str:
-                # a direct filename specification.
-                # check if file exists in FS
-                if not os.path.exists(inp):
-                    raise ValueError("input %s of Brick %s = %s does not exist in file system." % (key, self.path, inp))
-            elif type(inp) is bool:
-                # no specification at all, e.g. input: { src }
-                # here, config parser falls back to defining a bool src=True
-                raise ValueError("input %s of Brick %s is neither connected nor defined as a file." % (key, self.path))
 
         return dependencies
 
-    def createInputSymlinks(self):
+    def createSymlinks(self, inout):
         """
-        Create symlinks for all inputs.
+        Create symlinks for all inputs/outputs.
+        @param inout either 'input' or 'output'
         """
+        inoutMapping = {'input': self.input, 'output': self.output}[inout]
+
         fsPath = self.filesystemPath()
 
-        # walk this Brick's inputs without resolving config keys
-        for (key, inp) in self.input.data.iteritems():
+        # ensure each Brick has an input/output folder
+        if not os.path.exists(os.path.join(fsPath, inout)):
+            os.makedirs(os.path.join(fsPath, inout))
+
+        # walk this Brick's *puts without resolving config keys
+        for (key, anyput) in inoutMapping.data.iteritems():
             linkSource = None
-            if type(inp) is config.Reference:
+            if type(anyput) is config.Reference:
                 # referencing another Brick
-                #linkSource = self.filesystemPath(inp.path)
-                relPath = inp.relativePath(self.input)
+                relPath = anyput.relativePath(inoutMapping)
                 linkSource = self.referenceDependencyPath(relPath, brickOnly=False)
-            #elif type(inp) is str:
-            else:
-                # str, or config.Expression
-                # a direct filename specification.
-                #sys.stderr.write("STR %s\n" % inp)
-
-                # potentially resolve config.Expression
-                linkSource = self.input[key]
-
-            if linkSource is not None:
-                linkTarget = os.path.join(fsPath, 'input', key)
-                #sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
-
-                if not os.path.exists(os.path.dirname(linkTarget)):
-                    os.makedirs(os.path.dirname(linkTarget))
-                if os.path.islink(linkTarget):
-                    os.unlink(linkTarget)
-                os.symlink(linkSource, linkTarget)
-
-    def outputDependencies(self):
-        """
-        Get all our Bricks (parts) which produce our output.
-        In practice, this should only be necessary for Experiment itself.
-        """
-        dependencies = set()
-
-        # walk this Brick's outputs without resolving config keys
-        for (key, outp) in self.output.data.iteritems():
-            if type(outp) is config.Reference:
-                # we may be referencing another Brick, which we then
-                # need to add as a dependency.
-                relPath = outp.relativePath(self.output)
-                path = self.referenceDependencyPath(relPath)
-                if path is not None:
-                    dependencies.add(path)
-            elif type(outp) is bool:
+            elif type(anyput) is bool:
                 # no specification at all, e.g. output: { trg }
                 # here, config parser falls back to defining a bool trg=True
                 # (not an output dependency)
-                pass
-
-        return dependencies
-
-    def createOutputSymlinks(self):
-        """
-        Create symlinks for all outputs.
-        """
-        # TODO: almost equivalent with createInputSymlinks()
-        # TODO: unify!
-        fsPath = self.filesystemPath()
-
-        # ensure there is always an output folder for scripts to write to
-        if not os.path.exists(os.path.join(fsPath, 'output')):
-            os.makedirs(os.path.join(fsPath, 'output'))
-
-        # walk this Brick's outputs without resolving config keys
-        for (key, outp) in self.output.data.iteritems():
-            #print("key:", key, type(outp), self.path)
-            linkSource = None
-            if type(outp) is config.Reference:
-                # referencing another Brick
-                relPath = outp.relativePath(self.output)
-                linkSource = self.referenceDependencyPath(relPath, brickOnly=False)
-            # TODO: divergence here, below.
-            elif type(outp) is bool:
-                # linking bool to itself??
-                # e.g. Experiment.parts.WordAligner0.parts.GizaPrepare
-                # "True -> 0/Experiment/WordAligner0/GizaPrepare/output/preparedCorpusDir"
+                if inout == 'input':
+                    raise ValueError("input %s of Brick %s is neither connected nor defined as a file." % (key, self.path))
                 continue
-            # TODO: end divergence.
             else:
-                # str, or config.Expression
-                # a direct filename specification.
+                # str, or config.Expression: a direct filename specification.
                 #sys.stderr.write("STR %s\n" % inp)
 
-                # potentially resolve config.Expression
-                linkSource = self.output[key]
+                # potentially resolves config.Expression here
+                linkSource = inoutMapping[key]
+
+                # for input, check if file exists in FS
+                if inout == 'input' and not os.path.exists(linkSource):
+                    raise ValueError("input %s of Brick %s = %s does not exist in file system." % (key, self.path, inp))
 
             if linkSource is not None:
-                linkTarget = os.path.join(fsPath, 'output', key)
-                sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
+                linkTarget = os.path.join(fsPath, inout, key)
+                #sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
 
-                # TODO: also, linking output, we just need one ../
-                # e.g. WordAligner0/output/alignment -> ../Symmetrizer0/output/alignment
+                # mkdir -p $(dirname linkTarget)
                 if not os.path.exists(os.path.dirname(linkTarget)):
                     os.makedirs(os.path.dirname(linkTarget))
+                # ln -sf linkSource linkTarget
                 if os.path.islink(linkTarget):
                     os.unlink(linkTarget)
                 os.symlink(linkSource, linkTarget)
-
 
 
 class ConfigGenerator(object):
@@ -319,14 +266,7 @@ class ConfigGenerator(object):
             template = self.env.get_template('brick.do.jinja')
 
         # Render the Jinja template
-        brickDo = template.render({
-            'brick': brick
-
-            # convenience strings. Maybe shortest to hardcode instead
-            # (symlinks ensure correctness anyway).
-            #'input': {k: 'input/%s' % k for k in brick.input.data.keys()},
-            #'output': {k: 'output/%s' % k for k in brick.output.data.keys()}
-        })
+        brickDo = template.render({'brick': brick})
 
         # create/replace redo file, if necessary
         targetFile = os.path.join(brick.filesystemPath(), 'brick.do')
@@ -342,14 +282,14 @@ class ConfigGenerator(object):
         brick = Brick(cfgBrick)
 
         # nice debug prints
-        sys.stderr.write('%s\n' % cfgBrick.path)
-        if len(brick.inputDependencies()) > 0:
-            sys.stderr.write('  input %s\n' % str(brick.inputDependencies()))
-        if len(brick.outputDependencies()) > 0:
-            sys.stderr.write('  output %s\n' % str(brick.outputDependencies()))
+        #sys.stderr.write('%s\n' % cfgBrick.path)
+        #if len(brick.inputDependencies()) > 0:
+        #    sys.stderr.write('  input %s\n' % str(brick.inputDependencies()))
+        #if len(brick.outputDependencies()) > 0:
+        #    sys.stderr.write('  output %s\n' % str(brick.outputDependencies()))
 
-        brick.createInputSymlinks()
-        brick.createOutputSymlinks()
+        brick.createSymlinks('input')
+        brick.createSymlinks('output')
         self.generateRedoFile(brick)
 
         if 'parts' in brick:
