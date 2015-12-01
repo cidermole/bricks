@@ -233,6 +233,8 @@ class ConfigGenerator(object):
 
 
 if __name__ == '__main__':
-    cfg = config.Config(file('global.cfg'))
+    appDir = os.path.dirname(os.path.realpath(__file__))
+    configSearchPath = config.ConfigSearchPath([os.path.join(appDir, 'config')])
+    cfg = config.Config(file('global.cfg'), searchPath=configSearchPath)
     gen = ConfigGenerator(cfg)
     gen.generateBricks(gen.experiment)

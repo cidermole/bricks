@@ -776,7 +776,7 @@ class Config(Mapping):
         in the configuration hierarchy.
         @type parent: a L{Container} instance.
         """
-        print("loading config %s" % streamOrFile)
+        #print("loading config %s" % streamOrFile)
         Mapping.__init__(self, parent)
         object.__setattr__(self, 'reader', ConfigReader(self, searchPath))
         object.__setattr__(self, 'namespaces', [Config.Namespace()])
