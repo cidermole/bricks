@@ -180,10 +180,14 @@ class Brick(config.Mapping):
                 #linkSource = self.filesystemPath(inp.path)
                 relPath = inp.relativePath(self.input)
                 linkSource = self.referenceDependencyPath(relPath, brickOnly=False)
-            elif type(inp) is str:
+            #elif type(inp) is str:
+            else:
+                # str, or config.Expression
                 # a direct filename specification.
                 #sys.stderr.write("STR %s\n" % inp)
-                linkSource = inp
+
+                # potentially resolve config.Expression
+                linkSource = self.input[key]
 
             if linkSource is not None:
                 linkTarget = os.path.join(fsPath, 'input', key)
