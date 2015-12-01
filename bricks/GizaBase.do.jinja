@@ -1,0 +1,21 @@
+{#
+ # GIZA++/mgiza wrapper.
+ #}
+{% extends "brick.do.jinja" %}
+
+{# overrides brick.do.jinja #}
+{% block Work %}
+
+{% block AddPrepareWork %}{% endblock %}
+
+# note: -alignment has no effect here, as we do not yet symmetrize.
+
+{{ brick.MOSES }}/scripts/training/train-model.perl \
+{% block AddTrainingOptions %}{% endblock %}
+    -external-bin-dir "{{ brick.EXTERNAL_BIN_DIR }}" \
+    -mgiza -mgiza-cpus {{ brick.gizaCpus }} -parallel \
+    -f {{ brick.sourceLang }} -e {{ brick.targetLang }}
+
+{% block AddFinishWork %}{% endblock %}
+
+{%- endblock %}

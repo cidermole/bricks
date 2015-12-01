@@ -1,0 +1,20 @@
+{#
+ # GIZA++/mgiza wrapper.
+ #}
+{% extends "GizaBase.do.jinja" %}
+
+{# overrides GizaBase.do.jinja #}
+{% block AddTrainingOptions -%} \
+    -do-steps 3 \
+    -corpus-dir $(pwd)/input/preparedCorpusDir \
+    -giza-e2f $(pwd)/input/gizaDir12 -giza-f2e $(pwd)/input/gizaDir21 \
+    -alignment {{ brick.symmetrizationHeuristic }} \
+{%- endblock %}
+
+{# overrides GizaBase.do.jinja #}
+{% block AddFinishWork %}
+
+    # link to finished word alignment
+    ln -sf ../model/aligned.{{ brick.symmetrizationHeuristic }} output/alignment
+
+{% endblock %}

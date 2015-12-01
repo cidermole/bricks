@@ -1,0 +1,26 @@
+{#
+ # GIZA++/mgiza wrapper.
+ #}
+{% extends "GizaBase.do.jinja" %}
+
+{# overrides GizaBase.do.jinja #}
+{% block AddPrepareWork %}
+
+    GIZA_CORPUS_DIR=$(pwd)/output/preparedCorpusDir
+    mkdir -p $GIZA_CORPUS_DIR
+
+    mkdir -p corpus
+    GIZA_CORPUS=$(pwd)/corpus/crp
+
+    # ensure that corpus file names are suffixed properly for train-model.perl
+    ln -sf ../input/src ${GIZA_CORPUS}.{{ brick.sourceLang }}
+    ln -sf ../input/trg ${GIZA_CORPUS}.{{ brick.targetLang }}
+
+{% endblock %}
+
+{# overrides GizaBase.do.jinja #}
+{% block AddTrainingOptions -%} \
+    -do-steps 1 \
+    -corpus $GIZA_CORPUS \
+    -corpus-dir $GIZA_CORPUS_DIR \
+{%- endblock %}
