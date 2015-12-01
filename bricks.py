@@ -245,6 +245,10 @@ class ConfigGenerator(object):
                 # no need to update the file
                 return
 
+        # create directory if necessary
+        if not os.path.exists(os.path.dirname(fileName)):
+            os.makedirs(os.path.dirname(fileName))
+
         with open(fileName, 'w') as fo:
             fo.write(newContents)
 
