@@ -6,8 +6,9 @@
 
 {#- *** Add notice about our origins to generated files. *** -#}
 
-# If this shell script is called "brick.do", it was generated
+# If this shell script is called "brick.do", it was GENERATED
 # by "bricks.py" from templates and an experiment config file.
+# Please EDIT THE JINJA TEMPLATE instead. You've been warned.
 
 {#- *** End of notice. *** #}
 
@@ -15,22 +16,17 @@
 # we collect them onto one "redo-ifchange", to improve parallelism.
 
 (
-{% block InputDependencies %}
-    # input dependencies
-    {%- for dependency in brick.inputDependencies() %}
+{% block Dependencies %}
+    # dependencies
+    {%- for dependency in brick.dependencies() %}
         echo {{ dependency }}
     {%- endfor %}
 {%- endblock %}
 
-{% block OutputDependencies %}
-    # output dependencies (for Bricks containing several parts)
-    {%- for dependency in brick.outputDependencies() %}
-        echo {{ dependency }}
-    {%- endfor %}
-{% endblock %}
-
-    # need at least 1 command in case we have no dependencies
+{% if brick.dependencies() | length == 0 %}
+    # we have no dependencies
     true
+{% endif %}
 ) | xargs redo-ifchange
 
 ### Begin actual work ###

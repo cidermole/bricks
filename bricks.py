@@ -138,33 +138,28 @@ class Brick(config.Mapping):
 
         return None
 
-
-    def inputDependencies(self):
-        return self.dependencies('input')
-
-    def outputDependencies(self):
-        return self.dependencies('output')
-
-    def dependencies(self, inout):
+    def dependencies(self):
         """
         Get all Bricks which we depend on, as a list of relative
         file paths for the runner system 'redo'.
+        Either 'input' dependencies, or 'output' dependencies
+        (the latter for Bricks with parts).
         Used from 'brick.do.jinja' to obtain dependencies for 'redo'.
-
-        @param inout either 'input' or 'output'
         """
-        inoutMapping = {'input': self.input, 'output': self.output}[inout]
         dependencies = set()
 
-        # walk this Brick's inputs without resolving config keys
-        for (key, anyput) in inoutMapping.data.iteritems():
-            if type(anyput) is config.Reference:
-                # we may be referencing another Brick, which we then
-                # need to add as a dependency.
-                relPath = anyput.relativePath(inoutMapping)
-                path = self.referenceDependencyPath(relPath)
-                if path is not None:
-                    dependencies.add(path)
+        for inout in ['input', 'output']:
+            mapping = self[inout]
+
+            # walk this Brick's anyputs without resolving config keys
+            for (key, anyput) in mapping.data.iteritems():
+                if type(anyput) is config.Reference:
+                    # we may be referencing another Brick, which we then
+                    # need to add as a dependency.
+                    relPath = anyput.relativePath(mapping)
+                    path = self.referenceDependencyPath(relPath)
+                    if path is not None:
+                        dependencies.add(path)
 
         return dependencies
 
