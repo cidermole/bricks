@@ -199,7 +199,7 @@ class Brick(config.Mapping):
 
                 # for input, check if file exists in FS
                 if inout == 'input' and not os.path.exists(linkSource):
-                    raise ValueError("input %s of Brick %s = %s does not exist in file system." % (key, self.path, inp))
+                    raise ValueError("input %s of Brick %s = %s does not exist in file system." % (key, self.path, anyput))
 
             if linkSource is not None:
                 linkTarget = os.path.join(fsPath, inout, key)
