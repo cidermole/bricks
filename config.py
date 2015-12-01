@@ -724,6 +724,26 @@ class Mapping(Container):
             else:
                 self.writeValue(value, stream, indent)
 
+
+class ConfigSearchPath(object):
+    """
+    Specify a search path for global config file name references.
+    """
+    def __init__(self, folders):
+        self.folders = folders
+
+    def searchFile(self, fileName):
+        """
+        Attempts to find fileName in any of our folders, and
+        returns the full path name on success.
+        """
+        for folder in self.folders:
+            p = os.path.join(folder, fileName)
+            if os.path.exists(p):
+                return p
+        raise IOError("No such file or directory: '%s' in ConfigSearchPath %s" % (fileName, str(self.folders)))
+
+
 class Config(Mapping):
     """
     This class represents a configuration, and is the only one which clients
@@ -743,7 +763,7 @@ class Config(Mapping):
         def __repr__(self):
             return "<Namespace('%s')>" % ','.join(self.__dict__.keys())
 
-    def __init__(self, streamOrFile=None, parent=None):
+    def __init__(self, streamOrFile=None, parent=None, searchPath=None):
         """
         Initializes an instance.
 
@@ -756,8 +776,9 @@ class Config(Mapping):
         in the configuration hierarchy.
         @type parent: a L{Container} instance.
         """
+        print("loading config %s" % streamOrFile)
         Mapping.__init__(self, parent)
-        object.__setattr__(self, 'reader', ConfigReader(self))
+        object.__setattr__(self, 'reader', ConfigReader(self, searchPath))
         object.__setattr__(self, 'namespaces', [Config.Namespace()])
         object.__setattr__(self, 'resolving', set())
         if streamOrFile is not None:
@@ -1211,7 +1232,7 @@ class ConfigReader(object):
     This internal class implements a parser for configurations.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, searchPath=None):
         self.filename = None
         self.config = config
         self.lineno = 0
@@ -1220,7 +1241,7 @@ class ConfigReader(object):
         self.last_token = None
         self.commentchars = '#'
         self.whitespace = ' \t\r\n'
-        self.quotes = '\'"'
+        self.quotes = '\'"<>'
         self.punct = ':-+*/%,.{}[]()@`$'
         self.digits = '0123456789'
         self.wordchars = '%s' % WORDCHARS # make a copy
@@ -1228,6 +1249,7 @@ class ConfigReader(object):
         self.pbchars = []
         self.pbtokens = []
         self.comment = None
+        self.searchPath = searchPath if searchPath is not None else ConfigSearchPath([])
 
     def location(self):
         """
@@ -1291,7 +1313,7 @@ class ConfigReader(object):
                 continue
             if c in self.quotes:
                 token = c
-                quote = c
+                quote = c if c != '<' else '>'
                 tt = STRING
                 escaped = False
                 multiline = False
@@ -1569,8 +1591,16 @@ RCURLY, COMMA, found %r"
             self.match(RCURLY)
         else:
             self.match(AT)
-            tt, fn = self.match(STRING)
-            rv = Config(eval(fn), parent)
+            if self.token[0] == STRING:
+                tt, fn = self.match(STRING)
+                if fn[0] == '<':
+                    # global config file path
+                    fn = fn.replace('<', '"').replace('>', '"')
+                    fn = eval(fn)  # evaluate string
+                    fn = self.searchPath.searchFile(fn)
+                else:
+                    fn = eval(fn)  # evaluate string
+            rv = Config(file(fn), parent, searchPath=self.searchPath)
         return rv
 
     def parseScalar(self):
