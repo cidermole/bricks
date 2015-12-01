@@ -156,9 +156,10 @@ class Brick(config.Mapping):
         return dependencies
 
 class ConfigGenerator(object):
-    def __init__(self, cfg):
+    def __init__(self, cfg, searchPath):
         self.experiment = cfg.Experiment.copyExceptRefs(cfg, 'Experiment')
-        self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath='.'))
+        self.searchPath = searchPath
+        self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchPath))
 
     def replaceFileContents(self, fileName, newContents):
         """
@@ -183,7 +184,7 @@ class ConfigGenerator(object):
         """
         if 'template' in brick:
             # short specification of Jinja template for {% block Work %}
-            with open('template.do.jinja') as fi:
+            with open(os.path.join(self.searchPath, 'template.do.jinja')) as fi:
                 # 1) Python string interpolation in %%s (from 'template:')
                 # 2) Jinja template expansion
                 template = self.env.from_string(fi.read() % brick.template)
@@ -233,8 +234,12 @@ class ConfigGenerator(object):
 
 
 if __name__ == '__main__':
+    # search path for both global config includes @<global.cfg>
+    # and Jinja templates.
     appDir = os.path.dirname(os.path.realpath(__file__))
-    configSearchPath = config.ConfigSearchPath([os.path.join(appDir, 'config')])
+    searchPath = os.path.join(appDir, 'bricks')
+
+    configSearchPath = config.ConfigSearchPath([searchPath])
     cfg = config.Config(file('global.cfg'), searchPath=configSearchPath)
-    gen = ConfigGenerator(cfg)
+    gen = ConfigGenerator(cfg, searchPath)
     gen.generateBricks(gen.experiment)
