@@ -116,7 +116,7 @@ class Brick(config.Mapping):
             if brickOnly:
                 return os.path.join('..', relativePath[2], 'brick')
             else:
-                return os.path.join(*(['..', '..'] + relativePath[2:4]))
+                return os.path.join(*(['..', '..'] + relativePath[2:5]))
 
         # ['_', '_', '_', 'input', 'src']
         # used in referencing the Brick's input in parts
