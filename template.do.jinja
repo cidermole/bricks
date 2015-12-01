@@ -1,0 +1,11 @@
+{#
+ # Basic wrapper to enable 'template:' config entries whose value
+ # ends up in %%s.
+ #
+ # 1) Python string interpolation in %%s (from 'template:')
+ # 2) Jinja template expansion
+ #
+ # Unfortunately this is not very readable due to %% escaping.
+ #}
+{%% extends "brick.do.jinja" %%}
+{%% block Work %%}%s{%% endblock %%}

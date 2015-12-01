@@ -181,15 +181,25 @@ class ConfigGenerator(object):
         """
         Generate a redo file from template for this Brick.
         """
-        template = self.env.get_template('brick.do.jinja')
-        brickDo = template.render({
-            # all the Bricks we depend on
-            'inputDependencies': list(brick.inputDependencies()),
-            'outputDependencies': list(brick.outputDependencies()),
+        if 'template' in brick:
+            # short specification of Jinja template for {% block Work %}
+            with open('template.do.jinja') as fi:
+                # 1) Python string interpolation in %%s (from 'template:')
+                # 2) Jinja template expansion
+                template = self.env.from_string(fi.read() % brick.template)
+        elif 'templateFile' in brick:
+            # load specified Jinja template file
+            template = self.env.get_template(brick.templateFile)
+        else:
+            # default fallback - nothing to do (but still checks dependencies)
+            template = self.env.get_template('brick.do.jinja')
 
-            'brick': brick.path
-        })
-        self.replaceFileContents(os.path.join(brick.filesystemPath(), 'brick.do'), brickDo)
+        # Render the Jinja template
+        brickDo = template.render({'brick': brick})
+
+        # create/replace redo file, if necessary
+        targetFile = os.path.join(brick.filesystemPath(), 'brick.do')
+        self.replaceFileContents(targetFile, brickDo)
 
     def generateBricks(self, cfgBrick):
         """

@@ -6,26 +6,35 @@
 
 {#- *** Add notice about our origins to generated files. *** -#}
 
-# If this shell script is called 'brick.do', it was generated
-# by 'bricks.py' from templates and an experiment config file.
+# If this shell script is called "brick.do", it was generated
+# by "bricks.py" from templates and an experiment config file.
 
 {#- *** End of notice. *** #}
 
 {% block InputDependencies %}
     # input dependencies
-    {%- for dependency in inputDependencies %}
+    {%- for dependency in brick.inputDependencies() %}
         redo-ifchange {{ dependency }}
     {%- endfor %}
 {%- endblock %}
 
 {% block OutputDependencies %}
     # output dependencies (mainly/only for Experiment?)
-    {%- for dependency in outputDependencies %}
+    {%- for dependency in brick.outputDependencies() %}
         redo-ifchange {{ dependency }}
     {%- endfor %}
-{%- endblock %}
+{% endblock %}
+
+### Begin actual work ###
 
 {% block Work %}
-    # mark as completed (stdout goes to our target file 'brick')
-    echo "{{ brick }}"
+    # extend the template "brick.do.jinja" and override the
+    # block Work to do something useful in this Brick.
+{%- endblock %}
+
+### End actual work ###
+
+{% block Complete %}
+    # mark as completed (stdout goes to our target file "brick")
+    echo "{{ brick.path }}"
 {%- endblock %}
