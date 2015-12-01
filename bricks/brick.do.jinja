@@ -11,19 +11,27 @@
 
 {#- *** End of notice. *** #}
 
+# Instead of outputting each dependency as "redo-ifchange dependency",
+# we collect them onto one "redo-ifchange", to improve parallelism.
+
+(
 {% block InputDependencies %}
     # input dependencies
     {%- for dependency in brick.inputDependencies() %}
-        redo-ifchange {{ dependency }}
+        echo {{ dependency }}
     {%- endfor %}
 {%- endblock %}
 
 {% block OutputDependencies %}
     # output dependencies (mainly/only for Experiment?)
     {%- for dependency in brick.outputDependencies() %}
-        redo-ifchange {{ dependency }}
+        echo {{ dependency }}
     {%- endfor %}
 {% endblock %}
+
+    # need at least 1 command in case we have no dependencies
+    true
+) | xargs redo-ifchange
 
 ### Begin actual work ###
 
