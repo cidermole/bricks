@@ -134,7 +134,7 @@ class Brick(config.Mapping):
             if brickOnly:
                 return os.path.join(relativePath[2], 'brick')
             else:
-                return None
+                return os.path.join(*(['..'] + relativePath[2:5]))
 
         return None
 
@@ -223,6 +223,51 @@ class Brick(config.Mapping):
 
         return dependencies
 
+    def createOutputSymlinks(self):
+        """
+        Create symlinks for all outputs.
+        """
+        # TODO: almost equivalent with createInputSymlinks()
+        # TODO: unify!
+        fsPath = self.filesystemPath()
+
+        # walk this Brick's outputs without resolving config keys
+        for (key, outp) in self.output.data.iteritems():
+            #print("key:", key, type(outp), self.path)
+            linkSource = None
+            if type(outp) is config.Reference:
+                # referencing another Brick
+                relPath = outp.relativePath(self.output)
+                linkSource = self.referenceDependencyPath(relPath, brickOnly=False)
+            # TODO: divergence here, below.
+            elif type(outp) is bool:
+                # linking bool to itself??
+                # e.g. Experiment.parts.WordAligner0.parts.GizaPrepare
+                # "True -> 0/Experiment/WordAligner0/GizaPrepare/output/preparedCorpusDir"
+                continue
+            # TODO: end divergence.
+            else:
+                # str, or config.Expression
+                # a direct filename specification.
+                #sys.stderr.write("STR %s\n" % inp)
+
+                # potentially resolve config.Expression
+                linkSource = self.output[key]
+
+            if linkSource is not None:
+                linkTarget = os.path.join(fsPath, 'output', key)
+                sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
+
+                # TODO: also, linking output, we just need one ../
+                # e.g. WordAligner0/output/alignment -> ../Symmetrizer0/output/alignment
+                if not os.path.exists(os.path.dirname(linkTarget)):
+                    os.makedirs(os.path.dirname(linkTarget))
+                if os.path.islink(linkTarget):
+                    os.unlink(linkTarget)
+                os.symlink(linkSource, linkTarget)
+
+
+
 class ConfigGenerator(object):
     def __init__(self, cfgFileName, searchPath):
         configSearchPath = config.ConfigSearchPath([searchPath])
@@ -300,6 +345,7 @@ class ConfigGenerator(object):
             sys.stderr.write('  output %s\n' % str(brick.outputDependencies()))
 
         brick.createInputSymlinks()
+        brick.createOutputSymlinks()
         self.generateRedoFile(brick)
 
         if 'parts' in brick:
