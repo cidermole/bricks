@@ -295,10 +295,10 @@ class ConfigGenerator(object):
 
 
 if __name__ == '__main__':
-    # search path for both global config includes @<global.cfg>
+    # search path for both global config includes @<GeneralBricks.cfg>
     # and Jinja templates.
     appDir = os.path.dirname(os.path.realpath(__file__))
     searchPath = os.path.join(appDir, 'bricks')
 
-    gen = ConfigGenerator('global.cfg', searchPath)
+    gen = ConfigGenerator(sys.argv[1], searchPath)
     gen.generateBricks(gen.experiment)
