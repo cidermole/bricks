@@ -193,6 +193,7 @@ class Brick(config.Mapping):
             #sys.stderr.write("STR %s\n" % inp)
 
             # potentially resolves config.Expression here
+            # why pass apParent? because config.Expression doesn't have .parent
             linkSource = apParent[key]
 
             # for input, check if file exists in FS
