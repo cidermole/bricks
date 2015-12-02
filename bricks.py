@@ -116,7 +116,7 @@ class Brick(config.Mapping):
             if brickOnly:
                 return os.path.join('..', relativePath[2], 'brick')
             else:
-                return os.path.join(*(['..', '..'] + relativePath[2:5]))
+                return os.path.join(*(['..'] + relativePath[2:5]))
 
         # ['_', '_', '_', 'input', 'src']
         # used in referencing the Brick's input in parts
@@ -125,7 +125,7 @@ class Brick(config.Mapping):
             if brickOnly:
                 return None
             else:
-                return os.path.join(*(['..', '..'] + relativePath[3:5]))
+                return os.path.join(*(['..'] + relativePath[3:5]))
 
         # ['_', 'parts', 'WordAligner0', 'output', 'alignment']
         # used for output dependencies
@@ -134,7 +134,7 @@ class Brick(config.Mapping):
             if brickOnly:
                 return os.path.join(relativePath[2], 'brick')
             else:
-                return os.path.join(*(['..'] + relativePath[2:5]))
+                return os.path.join(*relativePath[2:5])
 
         return None
 
@@ -173,7 +173,7 @@ class Brick(config.Mapping):
         if type(anyput) is config.Mapping:
             # walk this Brick's *puts without resolving config keys
             for (k, aput) in anyput.data.iteritems():
-                self.linkPaths(inout, anyput, aput, k, linkSourcePref, os.path.join(linkTarget, k))
+                self.linkPaths(inout, anyput, aput, k, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, k))
         elif type(anyput) is config.Sequence:
             for (i, aput) in enumerate(anyput.data):
                 # anyput??
