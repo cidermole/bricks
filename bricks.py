@@ -202,7 +202,7 @@ class Brick(config.Mapping):
 
         if linkSource is not None:
             linkSource = os.path.join(linkSourcePref, linkSource)
-            sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
+            #sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
 
             # mkdir -p $(dirname linkTarget)
             if not os.path.exists(os.path.dirname(linkTarget)):
