@@ -163,7 +163,7 @@ class Brick(config.Mapping):
 
         return dependencies
 
-    def linkPaths(self, inout, apParent, anyput, key, linkTarget):
+    def linkPaths(self, inout, apParent, anyput, key, linkSourcePref, linkTarget):
         """
         Recursively walk inputs/outputs and link a list of path tuples.
         """
@@ -173,7 +173,11 @@ class Brick(config.Mapping):
         if type(anyput) is config.Mapping:
             # walk this Brick's *puts without resolving config keys
             for (k, aput) in anyput.data.iteritems():
-                self.linkPaths(inout, anyput, aput, k, os.path.join(linkTarget, k))
+                self.linkPaths(inout, anyput, aput, k, linkSourcePref, os.path.join(linkTarget, k))
+        elif type(anyput) is config.Sequence:
+            for (i, aput) in enumerate(anyput.data):
+                # anyput??
+                self.linkPaths(inout, anyput, aput, i, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, str(i)))
         elif type(anyput) is config.Reference:
             # referencing another Brick
             relPath = anyput.relativePath(inoutMapping)
@@ -196,6 +200,7 @@ class Brick(config.Mapping):
                 raise ValueError("input %s of Brick %s = %s does not exist in file system." % (key, self.path, anyput))
 
         if linkSource is not None:
+            linkSource = os.path.join(linkSourcePref, linkSource)
             sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
 
             # mkdir -p $(dirname linkTarget)
@@ -219,7 +224,7 @@ class Brick(config.Mapping):
         if not os.path.exists(os.path.join(fsPath, inout)):
             os.makedirs(os.path.join(fsPath, inout))
 
-        self.linkPaths(inout, self, inoutMapping, inout, os.path.join(fsPath, inout))
+        self.linkPaths(inout, self, inoutMapping, inout, '', os.path.join(fsPath, inout))
 
 
 class ConfigGenerator(object):
