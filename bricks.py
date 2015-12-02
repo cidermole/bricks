@@ -163,6 +163,49 @@ class Brick(config.Mapping):
 
         return dependencies
 
+    def linkPaths(self, inout, apParent, anyput, key, linkTarget):
+        """
+        Recursively walk inputs/outputs and link a list of path tuples.
+        """
+        inoutMapping = {'input': self.input, 'output': self.output}[inout]
+        linkSource = None
+
+        if type(anyput) is config.Mapping:
+            # walk this Brick's *puts without resolving config keys
+            for (k, aput) in anyput.data.iteritems():
+                self.linkPaths(inout, anyput, aput, k, os.path.join(linkTarget, k))
+        elif type(anyput) is config.Reference:
+            # referencing another Brick
+            relPath = anyput.relativePath(inoutMapping)
+            linkSource = self.referenceDependencyPath(relPath, brickOnly=False)
+        elif type(anyput) is bool:
+            # no specification at all, e.g. output: { trg }
+            # here, config parser falls back to defining a bool trg=True
+            # (not an output dependency)
+            if inout == 'input':
+                raise ValueError("input %s of Brick %s is neither connected nor defined as a file." % (key, self.path))
+        else:
+            # str, or config.Expression: a direct filename specification.
+            #sys.stderr.write("STR %s\n" % inp)
+
+            # potentially resolves config.Expression here
+            linkSource = apParent[key]
+
+            # for input, check if file exists in FS
+            if inout == 'input' and not os.path.exists(linkSource):
+                raise ValueError("input %s of Brick %s = %s does not exist in file system." % (key, self.path, anyput))
+
+        if linkSource is not None:
+            sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
+
+            # mkdir -p $(dirname linkTarget)
+            if not os.path.exists(os.path.dirname(linkTarget)):
+                os.makedirs(os.path.dirname(linkTarget))
+            # ln -sf linkSource linkTarget
+            if os.path.islink(linkTarget):
+                os.unlink(linkTarget)
+            os.symlink(linkSource, linkTarget)
+
     def createSymlinks(self, inout):
         """
         Create symlinks for all inputs/outputs.
@@ -176,42 +219,7 @@ class Brick(config.Mapping):
         if not os.path.exists(os.path.join(fsPath, inout)):
             os.makedirs(os.path.join(fsPath, inout))
 
-        # walk this Brick's *puts without resolving config keys
-        for (key, anyput) in inoutMapping.data.iteritems():
-            linkSource = None
-            if type(anyput) is config.Reference:
-                # referencing another Brick
-                relPath = anyput.relativePath(inoutMapping)
-                linkSource = self.referenceDependencyPath(relPath, brickOnly=False)
-            elif type(anyput) is bool:
-                # no specification at all, e.g. output: { trg }
-                # here, config parser falls back to defining a bool trg=True
-                # (not an output dependency)
-                if inout == 'input':
-                    raise ValueError("input %s of Brick %s is neither connected nor defined as a file." % (key, self.path))
-                continue
-            else:
-                # str, or config.Expression: a direct filename specification.
-                #sys.stderr.write("STR %s\n" % inp)
-
-                # potentially resolves config.Expression here
-                linkSource = inoutMapping[key]
-
-                # for input, check if file exists in FS
-                if inout == 'input' and not os.path.exists(linkSource):
-                    raise ValueError("input %s of Brick %s = %s does not exist in file system." % (key, self.path, anyput))
-
-            if linkSource is not None:
-                linkTarget = os.path.join(fsPath, inout, key)
-                #sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
-
-                # mkdir -p $(dirname linkTarget)
-                if not os.path.exists(os.path.dirname(linkTarget)):
-                    os.makedirs(os.path.dirname(linkTarget))
-                # ln -sf linkSource linkTarget
-                if os.path.islink(linkTarget):
-                    os.unlink(linkTarget)
-                os.symlink(linkSource, linkTarget)
+        self.linkPaths(inout, self, inoutMapping, inout, os.path.join(fsPath, inout))
 
 
 class ConfigGenerator(object):
