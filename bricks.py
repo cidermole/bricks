@@ -58,6 +58,21 @@
 #                 input/crp1 -> ../../input/src
 #                 <...>
 #
+# Templates
+# ---------
+# The idea of the shell script wrappers around programs, specified in Bricks
+# either directly as a Jinja template string using 'template:' or as a Jinja
+# template file name 'templateFile:', is to
+#
+# 1) specify both overridable and default configuration values to helpers,
+#
+# 2) coerce helper programs to take their input and produce their output
+#    exactly in this filesystem structure. (Temporary files are often also
+#    created, but should never be referred to by other Bricks).
+#
+#
+# incremental experiments
+# -----------------------
 # The idea for incremental experiments will be to check via 'redo' if targets
 # need to be run, and if they don't, we can symlink their input back to the
 # previous run.
