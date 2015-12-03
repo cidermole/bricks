@@ -604,14 +604,14 @@ class Mapping(Container):
                 kopi.config = kopi.findConfig(result)
             elif type(self.data[k]) is Mapping:
                 kopi = self.data[k].copyExceptRefs(result, k, memo)
+            elif type(self.data[k]) is Sequence:
+                kopi = self.data[k].copyExceptRefsSequence(result, k, memo)
             else:
                 # hopefully only primitive types here
                 kopi = copy.deepcopy(self.data[k], memo)
             setattr(result, k, kopi)
 
         return result
-
-
 
     def addMapping(self, key, value, comment, setting=False):
         """
@@ -913,6 +913,46 @@ class Sequence(Container):
         comments = object.__getattribute__(self, 'comments')
         data.append(item)
         comments.append(comment)
+
+    def evaluate(self, item):
+        """
+        Overrides Container.evaluate() to prevent attempting to resolve
+        references directly inside a Sequence.
+        """
+        # resolve within parent instead of self
+        if isinstance(item, Reference):
+            item = item.resolve(self.parent)
+        elif isinstance(item, Expression):
+            item = item.evaluate(self.parent)
+        return item
+
+    def copyExceptRefsSequence(self, parent=None, key=None, memo=None):
+        # parent == newParent
+        result = Sequence(parent)
+        if parent is not None:
+            result.setPath(makePath(parent.path, key))
+        if memo is not None:
+            memo[id(self)] = result
+            # TODO: use memo below.
+
+        # recursively copy the rest of our keys
+        # (I know this is not Pythonic, but I copy&pasted from above.)
+        # TODO: fix this code. unify with stuff in Mapping.copyExceptRefs(), if possible.
+        for k in range(len(self.data)):
+            if type(self.data[k]) is Reference:
+                kopi = copy.deepcopy(self.data[k], memo)
+                kopi.config = kopi.findConfig(result)
+            elif type(self.data[k]) is Mapping:
+                kopi = self.data[k].copyExceptRefs(result, '[%d]' % k, memo)
+            elif type(self.data[k]) is Sequence:
+                kopi = self.data[k].copyExceptRefsSequence(result, '[%d]' % k, memo)
+            else:
+                # hopefully only primitive types here
+                kopi = copy.deepcopy(self.data[k], memo)
+            #setattr(result, k, kopi)
+            result.append(kopi, '')
+
+        return result
 
     def __getitem__(self, index):
         data = object.__getattribute__(self, 'data')
