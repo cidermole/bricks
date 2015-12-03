@@ -113,6 +113,12 @@ class Brick(config.Mapping):
         path += [part for part in configPath if part != "parts"]
         return os.path.join(*path)
 
+    def pwd(self):
+        """
+        Absolute path to this Brick's working directory. Used from Jinja.
+        """
+        return os.path.abspath(self.filesystemPath())
+
     def referenceDependencyPath(self, relativePath, brickOnly=True):
         """
         Turns a config path referencing another Brick into a filesystem path.
