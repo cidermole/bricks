@@ -725,6 +725,22 @@ class Mapping(Container):
                 self.writeValue(value, stream, indent)
 
 
+    def getByPath(self, path):
+        """
+        Obtain a value in the configuration via its path.
+        @param path: The path of the required value
+        @type path: str
+        @return the value at the specified path.
+        @rtype: any
+        @raise ConfigError: If the path is invalid
+        """
+        s = 'self.' + path
+        #sys.stderr.write('getByPath: %s\n' % s)
+        try:
+            return eval(s)
+        except Exception, e:
+            raise ConfigError(str(e))
+
 class ConfigSearchPath(object):
     """
     Specify a search path for global config file name references.

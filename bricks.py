@@ -113,6 +113,51 @@ class Brick(config.Mapping):
         path += [part for part in configPath if part != "parts"]
         return os.path.join(*path)
 
+    def findConfig(self, container):
+        # clone from config.Reference
+        while (container is not None) and not isinstance(container, config.Config):
+            container = object.__getattribute__(container, 'parent')
+        return container
+
+    def magicInputBrick(self, inputRef):
+        #print(inputRef.path)
+        #return "<input magic>"
+        # brick.input.reorderingTables.data[0].relativePath(brick)[:-2]
+
+        # relative path to referenced Brick
+        refBrickPathOrig = inputRef.relativePath(self)[:-2]
+        refBrickPath = list(refBrickPathOrig)
+
+        # absolute path of us
+        ourPath = self.path.split('.')
+
+        # resolve relative _ walking upwards
+        # (poor man's implementation)
+        resPoint = self
+        while refBrickPath[0] == '_':
+            refBrickPath = refBrickPath[1:]
+            ourPath = ourPath[:-1]
+            resPoint = resPoint.parent
+
+        completePath = ourPath + refBrickPath
+
+        #sys.stderr.write('resolved: %s\n' % '.'.join(completePath))
+
+        # getting stuff from the original Config, we do not have the inheritance resolved :(
+        #inputBrick = self.findConfig(self).getByPath('.'.join(completePath))
+
+        # new walking resolution method
+        inputBrick = resPoint.getByPath('.'.join(refBrickPath))
+        #inputBrick = self.parent.getByPath('.'.join(refBrickPath))
+
+        #inputBrick = '.'.join(refBrickPathOrig)
+        #inputBrick = self.parent.LexReord0
+
+        #sys.stderr.write('%s\n' % str(inputBrick))
+
+        return inputBrick
+
+
     def pwd(self):
         """
         Absolute path to this Brick's working directory. Used from Jinja.

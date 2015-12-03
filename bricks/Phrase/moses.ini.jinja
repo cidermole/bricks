@@ -33,6 +33,8 @@ PhraseDictionaryOnDisk name=TranslationModel{{ i }} num-features=4 path={{ brick
 {% endfor %}
 {% for i in range(brick.input.reorderingTables|count) %}
 {#- TODO: how to reference the type? -#}
+# magicInput: {{ brick.magicInputBrick(brick.input.reorderingTables.data[0]).reorderingConfigSpec }}
+# magicInput: {{ brick.input.reorderingTables.data[0].relativePath(brick)[:-2] }}
 LexicalReordering name=LexicalReordering{{ i }} num-features=8 type=wbe-mslr-bidirectional-fe-allff input-factor=0 output-factor=0 path={{ brick.pwd() }}/input/reorderingTables/{{ i }}
 {% endfor %}
 {% for i in range(brick.input.languageModels|count) -%}
