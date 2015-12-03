@@ -27,14 +27,18 @@ cat <<EOF > output/mosesIni
 UnknownWordPenalty
 WordPenalty
 PhrasePenalty
-{# {% for phraseTable in brick.input.phraseTables %} #} {# does not work, cannot resolve refs from within refs #}
-{% for phraseTable in range(brick.input.phraseTables|count) %}
-{# note: phraseTable would be True if evaluated here, this is a shortcoming of the current way of recursively resolving keys. #}
-PhraseDictionaryOnDisk name=TranslationModel{{ loop.index0 }} num-features=4 path={{ brick.pwd() }}/input/phraseTables/{{ loop.index0 }} input-factor=0 output-factor=0
+{#- note: cannot actually iterate over phraseTables, as that would resolve keys, and that doesn't work yet from here. #}
+{%- for i in range(brick.input.phraseTables|count) %}
+PhraseDictionaryOnDisk name=TranslationModel{{ i }} num-features=4 path={{ brick.pwd() }}/input/phraseTables/{{ i }} input-factor=0 output-factor=0
 {% endfor %}
-LexicalReordering name=LexicalReordering0 num-features=8 type=wbe-mslr-bidirectional-fe-allff input-factor=0 output-factor=0 path=/home/david/mmt/ems/tm2small_ibm10k_ibm10k-ep/evaluation/test.filtered.1/ibm10k.reordering-table.1.wbe-mslr-bidirectional-fe
+{% for i in range(brick.input.reorderingTables|count) %}
+{#- TODO: how to reference the type? -#}
+LexicalReordering name=LexicalReordering{{ i }} num-features=8 type=wbe-mslr-bidirectional-fe-allff input-factor=0 output-factor=0 path={{ brick.pwd() }}/input/reorderingTables/{{ i }}
+{% endfor %}
+{% for i in range(brick.input.languageModels|count) -%}
+KENLM lazyken=0 name=LM{{ i }} factor=0 path={{ brick.pwd() }}/input/languageModels/{{ i }} order=3
+{% endfor %}
 Distortion
-KENLM lazyken=0 name=LM0 factor=0 path=/home/david/mmt/ems/tm2small_ibm10k_ibm10k-ep/evaluation/test.moses.table.ini.1 order=3
 
 # dense weights for feature functions
 [weight]
