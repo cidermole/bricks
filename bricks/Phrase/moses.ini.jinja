@@ -27,16 +27,14 @@ cat <<EOF > output/mosesIni
 UnknownWordPenalty
 WordPenalty
 PhrasePenalty
-{#- note: cannot actually iterate over phraseTables, as that would resolve keys, and that doesn't work yet from here. #}
-{%- for i in range(brick.input.phraseTables|count) %}
-PhraseDictionaryOnDisk name=TranslationModel{{ i }} num-features=4 path={{ brick.pwd() }}/input/phraseTables/{{ i }} input-factor=0 output-factor=0
+{%- for phraseTable in brick.input.phraseTables %}
+PhraseDictionaryOnDisk name=TranslationModel{{ loop.index0 }} num-features={{ phraseTable.numFeatures }} path={{ brick.pwd() }}/{{ phraseTable }} input-factor=0 output-factor=0
 {% endfor %}
 {% for reorderingTable in brick.input.reorderingTables %}
-{# TODO: allff FIXME #}
-LexicalReordering name=LexicalReordering{{ loop.index0 }} num-features=8 type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ brick.pwd() }}/{{ reorderingTable }}
+LexicalReordering name=LexicalReordering{{ loop.index0 }} num-features={{ reorderingTable.numFeatures }} type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ brick.pwd() }}/{{ reorderingTable }}
 {% endfor %}
-{% for i in range(brick.input.languageModels|count) -%}
-KENLM lazyken=0 name=LM{{ i }} factor=0 path={{ brick.pwd() }}/input/languageModels/{{ i }} order=3
+{% for languageModel in brick.input.languageModels -%}
+KENLM lazyken=0 name=LM{{ loop.index0 }} factor=0 path={{ brick.pwd() }}/{{ languageModel }} order={{ languageModel.ngramOrder }}
 {% endfor %}
 Distortion
 
@@ -47,9 +45,15 @@ Distortion
 UnknownWordPenalty0= 1
 WordPenalty0= -1
 PhrasePenalty0= 0.2
+{%- for phraseTable in brick.input.phraseTables %}
 TranslationModel0= 0.2 0.2 0.2 0.2
+{% endfor %}
+{% for reorderingTable in brick.input.reorderingTables %}
 LexicalReordering0= 0.3 0.3 0.3 0.3 0.3 0.3 0.3 0.3
+{% endfor %}
+{% for languageModel in brick.input.languageModels -%}
+LM{{ loop.index0 }}= 0.5
+{% endfor %}
 Distortion0= 0.3
-LM0= 0.5
 
 EOF
