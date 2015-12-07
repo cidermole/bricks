@@ -27,13 +27,13 @@ cat <<EOF > output/mosesIni
 UnknownWordPenalty
 WordPenalty
 PhrasePenalty
-{%- for phraseTable in brick.input.phraseTables %}
+{%- for phraseTable in brick.input.phraseTables -%}
 PhraseDictionaryOnDisk name=TranslationModel{{ loop.index0 }} num-features={{ phraseTable.numFeatures }} path={{ brick.pwd() }}/{{ phraseTable }} input-factor=0 output-factor=0
 {% endfor %}
-{% for reorderingTable in brick.input.reorderingTables %}
+{%- for reorderingTable in brick.input.reorderingTables -%}
 LexicalReordering name=LexicalReordering{{ loop.index0 }} num-features={{ reorderingTable.numFeatures }} type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ brick.pwd() }}/{{ reorderingTable }}
 {% endfor %}
-{% for languageModel in brick.input.languageModels -%}
+{%- for languageModel in brick.input.languageModels -%}
 KENLM lazyken=0 name=LM{{ loop.index0 }} factor=0 path={{ brick.pwd() }}/{{ languageModel }} order={{ languageModel.ngramOrder }}
 {% endfor %}
 Distortion
@@ -45,13 +45,13 @@ Distortion
 UnknownWordPenalty0= 1
 WordPenalty0= -1
 PhrasePenalty0= 0.2
-{%- for phraseTable in brick.input.phraseTables %}
+{% for phraseTable in brick.input.phraseTables -%}
 TranslationModel0= 0.2 0.2 0.2 0.2
 {% endfor %}
-{% for reorderingTable in brick.input.reorderingTables %}
+{%- for reorderingTable in brick.input.reorderingTables -%}
 LexicalReordering0= 0.3 0.3 0.3 0.3 0.3 0.3 0.3 0.3
 {% endfor %}
-{% for languageModel in brick.input.languageModels -%}
+{%- for languageModel in brick.input.languageModels -%}
 LM{{ loop.index0 }}= 0.5
 {% endfor %}
 Distortion0= 0.3
