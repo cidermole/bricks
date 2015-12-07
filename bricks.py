@@ -385,8 +385,6 @@ class ConfigGenerator(object):
         self.searchPath = searchPath
         self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchPath))
 
-        print('experiment.refTest = %s' % str(self.experiment.refTest))
-
     def replaceFileContents(self, fileName, newContents):
         """
         Only replace fileName with newContents if the contents differ
