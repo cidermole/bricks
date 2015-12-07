@@ -120,6 +120,7 @@ class Brick(config.Mapping):
         return container
 
     def magicInputBrick(self, inputRef):
+        assert(type(inputRef) is config.Reference)
         #print(inputRef.path)
         #return "<input magic>"
         # brick.input.reorderingTables.data[0].relativePath(brick)[:-2]
@@ -227,6 +228,8 @@ class Brick(config.Mapping):
                     if path is not None:
                         dependencies.add(path)
 
+        # TODO input Sequences
+
         return dependencies
 
     def linkPaths(self, inout, apParent, anyput, key, linkSourcePref, linkTarget):
@@ -287,11 +290,91 @@ class Brick(config.Mapping):
 
         fsPath = self.filesystemPath()
 
-        # ensure each Brick has an input/output folder
+        # ensure each Brick has an input/output directory
         if not os.path.exists(os.path.join(fsPath, inout)):
             os.makedirs(os.path.join(fsPath, inout))
 
         self.linkPaths(inout, self, inoutMapping, inout, '', os.path.join(fsPath, inout))
+
+
+# can we create this while copying the config tree for inheritance?
+class InputWrap(object):
+    """
+    Wraps a Brick input config for easy access from Jinja templates.
+    """
+    def __init__(self, brick, reference, fileStr):
+        """
+        @param reference: config.Reference pointing to output, or str otherwise?
+        """
+        self.brick = brick
+        self.refOrStr = reference
+        self.fileStr = fileStr
+        self.mib = self.brick.magicInputBrick(self.refOrStr)
+
+    def __str__(self):
+        """
+        @return: input file path for our Brick, relative to Brick working directory.
+        """
+        # TODO: this could be absolute path, if config files usually need that (I think so)
+        return self.fileStr
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __getattr__(self, item):
+        """
+        Allow simplified access (easy syntax) to input Brick's config in
+        Jinja templates. Syntax example: {{ brick.input.phraseTable.reorderingConfigSpec }}
+        """
+        if item in self.mib:
+            return self.mib[item]
+        else:
+            return object.__getattribute__(self, item)
+
+
+class TemplateBrick(Brick):
+    """
+    Wrapper around Brick to replace input and output with nice wrappers
+    for access from templates.
+    """
+    def __init__(self, brick):
+        Brick.__init__(self, brick)
+
+    def __getattribute__(self, item):
+        if item != 'input':
+            # resort to our parent with all other attributes
+            return Brick.__getattribute__(self, item)
+
+        # override the attributes input, output
+        anyputMap = {}
+        #anyputs = Brick.__getattribute__(self, item)
+        anyputs = self.data[item]
+        for anyput in anyputs.keys():
+            val = anyputs.data[anyput]
+            if type(val) is config.Reference:
+                # TODO: fsPath() on Reference
+                anyputMap[anyput] = InputWrap(self, val, os.path.join(item, anyput))
+            elif type(val) is config.Sequence:
+                l = []
+                #for i, v in enumerate(val):
+                #    l.append(InputWrap(self, v, os.path.join(item, anyput, str(i))))
+                for i in range(len(val)):
+                    if type(val.data[i]) is config.Reference:
+                        # avoid resolving key in Sequence
+                        l.append(InputWrap(self, val.data[i], os.path.join(item, anyput, str(i))))
+                    else:
+                        # potentially resolve key
+                        l.append(val[i])
+                anyputMap[anyput] = l
+            else:
+                # potentially resolve key
+                anyputMap[anyput] = anyputs[anyput]
+            # bla, bla. the usual input processing. why do I keep repeating it?
+            # need recursion for resolving References in a Sequence
+
+            # TODO: maybe a processing helper with a callback?
+            # either callback, or map()-like interface (like here), ...
+        return anyputMap
 
 
 class ConfigGenerator(object):
@@ -341,7 +424,7 @@ class ConfigGenerator(object):
             template = self.env.get_template('brick.do.jinja')
 
         # Render the Jinja template
-        brickDo = template.render({'brick': brick})
+        brickDo = template.render({'brick': TemplateBrick(brick)})
 
         # create/replace redo file, if necessary
         targetFile = os.path.join(brick.filesystemPath(), 'brick.do')

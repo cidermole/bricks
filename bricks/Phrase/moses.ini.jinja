@@ -31,11 +31,9 @@ PhrasePenalty
 {%- for i in range(brick.input.phraseTables|count) %}
 PhraseDictionaryOnDisk name=TranslationModel{{ i }} num-features=4 path={{ brick.pwd() }}/input/phraseTables/{{ i }} input-factor=0 output-factor=0
 {% endfor %}
-{% for i in range(brick.input.reorderingTables|count) %}
-{#- TODO: how to reference the type? -#}
-# magicInput: {{ brick.magicInputBrick(brick.input.reorderingTables.data[0]).reorderingConfigSpec }}
-# magicInput: {{ brick.input.reorderingTables.data[0].relativePath(brick)[:-2] }}
-LexicalReordering name=LexicalReordering{{ i }} num-features=8 type=wbe-mslr-bidirectional-fe-allff input-factor=0 output-factor=0 path={{ brick.pwd() }}/input/reorderingTables/{{ i }}
+{% for reorderingTable in brick.input.reorderingTables %}
+{# TODO: allff FIXME #}
+LexicalReordering name=LexicalReordering{{ loop.index0 }} num-features=8 type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ brick.pwd() }}/{{ reorderingTable }}
 {% endfor %}
 {% for i in range(brick.input.languageModels|count) -%}
 KENLM lazyken=0 name=LM{{ i }} factor=0 path={{ brick.pwd() }}/input/languageModels/{{ i }} order=3
