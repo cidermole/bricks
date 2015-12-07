@@ -1190,6 +1190,9 @@ class Reference(object):
                     rv = current[key] if resolveRefs else current.data[key]
                     for item in elements[1:]:
                         key = item[1]
+                        if type(key) is Reference:
+                            # recursive key resolution support (enables us to use references in indices, like configKey: $Part.definition[$i])
+                            key = key.resolve2(container, resolveRefs)[0]
                         rv = rv[key] if resolveRefs else rv.data[key]
                     parentConfig.resolving.remove(firstkey)
                     break
@@ -1757,12 +1760,18 @@ RCURLY, COMMA, found %r"
         else:
             self.match(LBRACK2)
             tt, tv = self.token
-            if tt not in [NUMBER, STRING]:
+            if tt not in [NUMBER, STRING, DOLLAR]:
                 raise ConfigFormatError("%s: expected number or string, found %r" % (self.location(), tv))
-            self.token = self.getToken()
-            tv = eval(tv)
-            self.match(RBRACK)
-            ref.addElement(LBRACK, tv)
+            if tt == DOLLAR:
+                self.token = self.getToken()
+                rv = self.parseReference(DOLLAR)
+                self.match(RBRACK)
+                ref.addElement(DOLLAR, rv)
+            else:
+                self.token = self.getToken()
+                tv = eval(tv)
+                self.match(RBRACK)
+                ref.addElement(LBRACK, tv)
 
 def defaultMergeResolve(map1, map2, key):
     """
