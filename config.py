@@ -956,6 +956,11 @@ class Sequence(Container):
 
     def __getitem__(self, index):
         data = object.__getattribute__(self, 'data')
+
+        # extra non-numeric key: length
+        if index == 'length':
+            return len(self.data)
+
         try:
             rv = data[index]
         except (IndexError, KeyError, TypeError):
@@ -1670,7 +1675,12 @@ RCURLY, COMMA, found %r"
             end = self.parseSequence(parent, suffix)
             if len(end.data) != 1:
                 raise ConfigFormatError("%s: expecting single number for end of range" % (self.location()))
-            end = int(end.data[0])
+            if type(end.data[0]) is Expression:
+                end = end.data[0].evaluate(parent)
+            elif type(end.data[0]) is Reference:
+                end = end.data[0].resolve(parent)
+            else:
+                end = int(end.data[0])
 
             # build the range
             object.__setattr__(rv, 'data', [])
