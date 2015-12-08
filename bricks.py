@@ -375,6 +375,8 @@ class ConfigGenerator(object):
         self.searchPath = searchPath
         self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchPath))
 
+        print(self.experiment.parts.PhraseTable0.parts.LexReordering0.orient)
+
     def replaceFileContents(self, fileName, newContents):
         """
         Only replace fileName with newContents if the contents differ

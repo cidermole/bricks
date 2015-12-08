@@ -458,16 +458,24 @@ class Container(object):
         else:
             raise AssertionError('instantiate() only supported on Sequence, Mapping and Config.')
 
-        if parent is not None:
-            result.setPath(makePath(parent.path, key))
 
-
+        # TODO: is this already recursive?
         # resolve inheritance, without resolving References
         if 'extends' in self.keys():
             kopi = self['extends'].instantiate(parent, key)
-            for k in kopi.keys():
-                setattr(result, k, kopi.data[k])
+            if 'parts' in kopi.keys() or key == 'PhraseTable0':
+                assert(kopi.parts.parent == kopi)
+                assert(kopi.parent == parent)
+            result = kopi
+            #for k in kopi.keys():
+            #    # TODO: fix reparenting here
+            #    if type(kopi.data[k]) in [Mapping, Sequence]:
+            #        # reparent the copies
+            #        kopi.data[k].parent = result
+            #    setattr(result, k, kopi.data[k])
 
+        if parent is not None:
+            result.setPath(makePath(parent.path, key))
 
         magicLoop = (type(self) is Sequence and key == 'parts')
 
