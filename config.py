@@ -471,6 +471,8 @@ class Container(object):
 
         magicLoop = (type(self) is Sequence and key == 'parts')
 
+        # TODO: make sane names / routines for these checks
+
         # in output of a magic loop Brick
         #magicOutput = type(self) is Mapping and key == 'output' and 'parts' in self.parent and type(self.parent.parts) is Sequence  # one level above
         magicOutput = type(self) is Sequence and self.parent.parent is not None and 'parts' in self.parent.parent and type(self.parent.parent.parts) is Sequence
