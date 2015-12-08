@@ -80,6 +80,7 @@
 
 from __future__ import print_function
 
+import re
 import config
 import os
 import sys
@@ -108,7 +109,7 @@ class Brick(config.Mapping):
         # replace .parts: shortens "Experiment.parts.WordAligner0.parts.Giza12"
         # into "Experiment.WordAligner0.Giza12"
         configPath = self.path if configPath is None else configPath
-        configPath = configPath.split('.')
+        configPath = re.split(r"[%s]+" % re.escape(".[]"), configPath)
         path = ['0']
         path += [part for part in configPath if part != "parts"]
         return os.path.join(*path)
@@ -451,7 +452,7 @@ class ConfigGenerator(object):
         self.generateRedoFile(brick)
 
         if 'parts' in brick:
-            for part in brick.parts:
+            for part in brick.parts.keys():
                 self.generateBricks(brick.parts[part])
 
 

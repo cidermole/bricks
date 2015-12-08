@@ -1067,7 +1067,7 @@ class Reference(object):
         to a path ['_', '_', 'input', 'src']
         """
         result = list(elements[0:1])
-        result += [e[1] for e in elements[1:]]
+        result += [str(e[1]) for e in elements[1:]]
         return result
 
     def path(self):
