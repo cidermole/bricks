@@ -476,22 +476,19 @@ class Container(object):
         @return: a copy of this Container in the new config tree
         """
         # allow both Sequence and Mapping to be copied with this same code.
-        if type(parent) is Sequence:
-            assert(type(key) is int)
-            pathKey = '[%d]' % key
+        if type(self) is Sequence:
             result = Sequence(parent)
-        elif type(parent) is Mapping:
-            pathKey = key
+        elif type(self) in [Mapping, Config]:  # Config? untested.
             result = Mapping(parent)
         else:
             raise AssertionError('instantiate() only supported on Sequence and Mapping.')
 
         if parent is not None:
-            result.setPath(makePath(parent.path, pathKey))
+            result.setPath(makePath(parent.path, key))
 
         # resolve inheritance
         if 'extends' in self.keys():
-            kopi = self['extends'].copyExceptRefs(parent, key)
+            kopi = self['extends'].instantiate(parent, key)
             for k in kopi.keys():
                 setattr(result, k, kopi[k])
 
@@ -505,11 +502,12 @@ class Container(object):
                 kopi = copy.deepcopy(self.data[k])
                 kopi.config = kopi.findConfig(result)
             elif type(self.data[k]) in [Mapping, Sequence]:
-                kopi = self.data[k].instantiate(result, k)
+                nextKey = '[%d]' % k if type(self) is Sequence else k
+                kopi = self.data[k].instantiate(result, nextKey)
             else:
                 # hopefully only primitive types here
                 kopi = copy.deepcopy(self.data[k])
-            setattr(result, k, kopi)
+            result.__setattr__(k, kopi)
 
         return result
 
@@ -1000,7 +998,7 @@ class Reference(object):
     """
     This internal class implements a value which is a reference to another value.
     """
-    def __init__(self, config, type, ident):
+    def __init__(self, type, ident):
         """
         Initialize an instance.
 
