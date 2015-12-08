@@ -334,19 +334,20 @@ class TemplateBrick(Brick):
             # resort to our parent with all other attributes
             return Brick.__getattribute__(self, item)
 
-        # override the attributes input, output
+        # override the attribute input: make Jinja see a dict of InputWrap instances,
+        # or lists of InputWraps for input lists.
         anyputMap = {}
-        #anyputs = Brick.__getattribute__(self, item)
         anyputs = self.data[item]
         for anyput in anyputs.keys():
             val = anyputs.data[anyput]
             if type(val) is config.Reference:
-                # TODO: fsPath() on Reference
+                # wrap plain input mapping
+                # rather, put an fsPath() implementation on Reference?
                 anyputMap[anyput] = InputWrap(self, val, os.path.join(item, anyput))
+                # TODO: config.Reference does not necessarily mean this is a mapping to an output. It could be referring to a hardcoded filename.
             elif type(val) is config.Sequence:
+                # wrap input list mapping
                 l = []
-                #for i, v in enumerate(val):
-                #    l.append(InputWrap(self, v, os.path.join(item, anyput, str(i))))
                 for i in range(len(val)):
                     if type(val.data[i]) is config.Reference:
                         # avoid resolving key in Sequence
@@ -356,7 +357,7 @@ class TemplateBrick(Brick):
                         l.append(val[i])
                 anyputMap[anyput] = l
             else:
-                # potentially resolve key
+                # resolve other keys if necessary (e.g. hardcoded filenames, pieced together)
                 anyputMap[anyput] = anyputs[anyput]
             # bla, bla. the usual input processing. why do I keep repeating it?
             # need recursion for resolving References in a Sequence
