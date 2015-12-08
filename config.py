@@ -1052,19 +1052,16 @@ class Reference(object):
         """
         Initialize an instance.
 
-        @param config: The configuration which contains this reference.
-        @type config: A L{Config} instance.
         @param type: The type of reference.
         @type type: BACKTICK or DOLLAR
         @param ident: The identifier which starts the reference.
         @type ident: str
         """
-        self.config = config
         self.type = type
         self.elements = [ident]
 
     def __deepcopy__(self, memo=None):
-        result = Reference(self.config, self.type, self.elements[0])
+        result = Reference(self.type, self.elements[0])
         #result.setPath(self.path)
         if memo is not None:
             memo[id(self)] = result
@@ -1739,7 +1736,7 @@ RCURLY, COMMA, found %r"
         @raise ConfigFormatError: if a syntax error is found.
         """
         word = self.match(WORD)
-        rv = Reference(self.config, type, word[1])
+        rv = Reference(type, word[1])
         while self.token[0] in [DOT, LBRACK2]:
             self.parseSuffix(rv)
         return rv
