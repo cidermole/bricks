@@ -114,17 +114,12 @@ class Brick(config.Mapping):
         path += [part for part in configPath if part != "parts"]
         return os.path.join(*path)
 
-    def findConfig(self, container):
-        # clone from config.Reference
-        while (container is not None) and not isinstance(container, config.Config):
-            container = object.__getattribute__(container, 'parent')
-        return container
-
     def magicInputBrick(self, inputRef):
+        """
+        For a given Brick input Reference, return the Brick which provides this input.
+        @param inputRef: Reference from the input mapping of a Brick, referring to another Brick's output
+        """
         assert(type(inputRef) is config.Reference)
-        #print(inputRef.path)
-        #return "<input magic>"
-        # brick.input.reorderingTables.data[0].relativePath(brick)[:-2]
 
         # relative path to referenced Brick
         refBrickPathOrig = inputRef.relativePath(self)[:-2]
@@ -141,24 +136,12 @@ class Brick(config.Mapping):
             ourPath = ourPath[:-1]
             resPoint = resPoint.parent
 
-        completePath = ourPath + refBrickPath
+        #sys.stderr.write('resolved: %s\n' % '.'.join(ourPath + refBrickPath))
 
-        #sys.stderr.write('resolved: %s\n' % '.'.join(completePath))
-
-        # getting stuff from the original Config, we do not have the inheritance resolved :(
-        #inputBrick = self.findConfig(self).getByPath('.'.join(completePath))
-
-        # new walking resolution method
         inputBrick = resPoint.getByPath('.'.join(refBrickPath))
-        #inputBrick = self.parent.getByPath('.'.join(refBrickPath))
-
-        #inputBrick = '.'.join(refBrickPathOrig)
-        #inputBrick = self.parent.LexReord0
-
         #sys.stderr.write('%s\n' % str(inputBrick))
 
         return inputBrick
-
 
     def pwd(self):
         """
@@ -174,6 +157,9 @@ class Brick(config.Mapping):
         @param brickOnly    only reference the brick itself, not the actual input/output file
         """
         #print(brickOnly, relativePath)
+
+        # This should really, really be integrated in a recursive function which walks
+        # the config tree. However, this is how it has grown. Feel free to replace this.
 
         # currently we only support dependencies of the form ...:
 
@@ -236,7 +222,7 @@ class Brick(config.Mapping):
 
     def linkPaths(self, inout, apParent, anyput, key, linkSourcePref, linkTarget):
         """
-        Recursively walk inputs/outputs and link a list of path tuples.
+        Recursively walk inputs/outputs and create symlinks in the filesystem.
         """
         inoutMapping = {'input': self.input, 'output': self.output}[inout]
         linkSource = None
@@ -315,10 +301,11 @@ class InputWrap(object):
 
     def __str__(self):
         """
-        @return: input file path for our Brick, relative to Brick working directory.
+        To easily obtain brick input filenames from Jinja, for example as {{ brick.input.corpus }}
+        This could be written "input/corpus", but becomes more useful in loops over input lists.
+        @return: absolute input file path for our Brick.
         """
-        # TODO: this could be absolute path, if config files usually need that (I think so)
-        return self.fileStr
+        return os.path.join(self.brick.pwd(), self.fileStr)
 
     def __repr__(self):
         return self.__str__()
