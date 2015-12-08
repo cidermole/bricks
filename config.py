@@ -152,34 +152,6 @@ if not logger.handlers:
     logger.addHandler(NullHandler())
 
 
-
-def resolveInheritance(merger, node):
-    """
-    Resolve 'extends:' inheritance of config node recursively.
-    @param node a config node of type config.Mapping
-    """
-    if 'extends' in node:
-        parent = node.extends
-
-        # recursively resolve ancestors' inheritance
-        parent = resolveInheritance(merger, parent)
-
-        # copy a config tree (avoid changing actual parent)
-        # this copies just one level (the level which is merged)
-        parent = copy.deepcopy(parent)
-
-        # merge child node into parent, allowing overrides
-        merger.merge(parent, node)
-        del parent['extends']
-
-        return parent
-
-    # just so semantics are consistent, always return a copy
-    # this copies just one level (the level which is merged)
-    return copy.deepcopy(node)
-
-
-
 class ConfigInputStream(object):
     """
     An input stream which can read either ANSI files with default encoding
