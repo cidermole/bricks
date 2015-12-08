@@ -495,8 +495,19 @@ class Container(object):
             for k in kopi.keys():
                 setattr(result, k, kopi.data[k])
 
+        magicLoop = (type(self) is Sequence and key == 'parts')
+        # resolve magic loop for parts
+        if magicLoop:
+            # special case for magic loops using parts: [{ ... }] syntax
+            assert(len(self.keys()) == 1)
+            # parent.i is a Sequence of indices to be creating here
+            copyKeys = [(0, ei) for ei in parent.i]
+        else:
+            # the regular case: walk keys, and write one key each
+            copyKeys = [(k, k) for k in self.keys()]
+
         # recursively copy the rest of our keys
-        for k in self.keys():
+        for (k, kTarget) in copyKeys:
             if k == 'extends':
                 # inheritance handled above
                 continue
@@ -504,12 +515,15 @@ class Container(object):
             if type(self.data[k]) in [Reference, Expression]:
                 kopi = copy.deepcopy(self.data[k])
             elif type(self.data[k]) in [Mapping, Sequence]:
-                nextKey = '[%d]' % k if type(self) is Sequence else k
+                nextKey = '[%d]' % kTarget if type(result) is Sequence else kTarget
                 kopi = self.data[k].instantiate(result, nextKey)
+                if magicLoop:
+                    # add implicit $i inside the single, looped part definition
+                    kopi.__setattr__('i', kTarget)
             else:
                 # hopefully only primitive types here
                 kopi = copy.deepcopy(self.data[k])
-            result.__setattr__(k, kopi)
+            result.__setattr__(kTarget, kopi)
 
         return result
 
@@ -1058,7 +1072,15 @@ class Reference(object):
         result += ['_'] if nup > 0 else []
         result += [('.', '_')] * (nup - 1)
         result += [('.', self.elements[0])] if nup > 0 else [self.elements[0]]
-        result += self.elements[1:]
+
+        # e.g. ['_', ('.', '_'), ('.', '_'), ('.', 'input'), ('.', 'corpora'), ('$', $i)]
+
+        # resolve nested references (e.g. $var[$i])
+        for r in self.elements[1:]:
+            if r[0] == DOLLAR:
+                r = (DOLLAR, r[1].resolve(container))
+            result.append(r)
+
         return result
 
     def elements2path(self, elements):
