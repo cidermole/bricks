@@ -467,6 +467,53 @@ class Container(object):
                 value = repr(value)
             stream.write('%s%s%s' % (indstr, value, NEWLINE))
 
+    def instantiate(self, parent=None, key=None):
+        """
+        Copy this Container, resolving inheritance, but without resolving References.
+        Adds the Container below the parent in a new config tree.
+        @param parent: new parent in the config tree we are copying to
+        @param key:    name (or index, for Sequence parent) of this Container
+        @return: a copy of this Container in the new config tree
+        """
+        # allow both Sequence and Mapping to be copied with this same code.
+        if type(parent) is Sequence:
+            assert(type(key) is int)
+            pathKey = '[%d]' % key
+            result = Sequence(parent)
+        elif type(parent) is Mapping:
+            pathKey = key
+            result = Mapping(parent)
+        else:
+            raise AssertionError('instantiate() only supported on Sequence and Mapping.')
+
+        if parent is not None:
+            result.setPath(makePath(parent.path, pathKey))
+
+        # resolve inheritance
+        if 'extends' in self.keys():
+            kopi = self['extends'].copyExceptRefs(parent, key)
+            for k in kopi.keys():
+                setattr(result, k, kopi[k])
+
+        # recursively copy the rest of our keys
+        for k in self.keys():
+            if k == 'extends':
+                # inheritance handled above
+                continue
+
+            if type(self.data[k]) is Reference:
+                kopi = copy.deepcopy(self.data[k])
+                kopi.config = kopi.findConfig(result)
+            elif type(self.data[k]) in [Mapping, Sequence]:
+                kopi = self.data[k].instantiate(result, k)
+            else:
+                # hopefully only primitive types here
+                kopi = copy.deepcopy(self.data[k])
+            setattr(result, k, kopi)
+
+        return result
+
+
 class Mapping(Container):
     """
     This internal class implements key-value mappings in configurations.
@@ -532,86 +579,6 @@ class Mapping(Container):
     def __contains__(self, item):
         order = object.__getattribute__(self, 'order')
         return item in order
-
-    def __deepcopy__(self, memo=None):
-        return self.my_deepcopy(False, memo)
-
-    #def my_name(self):
-    #    path = self.path
-    #    return path.split('.')[-1]
-
-    def my_deepcopy(self, inParts=False, memo=None):
-        result = Mapping(self.parent)
-        #result.setPath(self.path)
-        if memo is not None:
-            memo[id(self)] = result
-
-        # resolve inheritance
-        if 'extends' in self.keys():
-            kopi = copy.deepcopy(self['extends'], memo)
-            for k in kopi.keys():
-                setattr(result, k, kopi[k])
-
-        for k in self.keys():
-            if k == 'extends':
-                # inheritance handled above
-                continue
-            #setattr(result, k, copy.deepcopy(self[k], memo))
-
-            # half-assed copy: reference all keys, except from 'parts:'
-            # which must be copied recursively.
-            if k == 'parts':
-                assert(type(self[k]) is Mapping)
-                # for a double depth, create deep copies
-                kopi = self[k].my_deepcopy(True, memo)
-                kopi.parent = result
-                kopi.setPath(makePath(self.path, k))
-            elif inParts:
-                kopi = copy.deepcopy(self[k], memo)
-                kopi.parent = result
-                kopi.setPath(makePath(self.path, k))
-            else:
-                # shallow copy
-                kopi = self[k]
-            setattr(result, k, kopi)
-        return result
-
-    # rather, copyKeepRefs() - copy without resolving References
-    def copyExceptRefs(self, parent=None, key=None, memo=None):
-        # parent == newParent
-        result = Mapping(parent)
-        if parent is not None:
-            result.setPath(makePath(parent.path, key))
-        if memo is not None:
-            memo[id(self)] = result
-            # TODO: use memo below.
-
-        # resolve inheritance
-        if 'extends' in self.keys():
-            #kopi = copy.deepcopy(self['extends'], memo)
-            kopi = self['extends'].copyExceptRefs(parent, key, memo)
-            for k in kopi.keys():
-                setattr(result, k, kopi[k])
-
-        # recursively copy the rest of our keys
-        for k in self.keys():
-            if k == 'extends':
-                # inheritance handled above
-                continue
-
-            if type(self.data[k]) is Reference:
-                kopi = copy.deepcopy(self.data[k], memo)
-                kopi.config = kopi.findConfig(result)
-            elif type(self.data[k]) is Mapping:
-                kopi = self.data[k].copyExceptRefs(result, k, memo)
-            elif type(self.data[k]) is Sequence:
-                kopi = self.data[k].copyExceptRefsSequence(result, k, memo)
-            else:
-                # hopefully only primitive types here
-                kopi = copy.deepcopy(self.data[k], memo)
-            setattr(result, k, kopi)
-
-        return result
 
     def addMapping(self, key, value, comment, setting=False):
         """
@@ -942,33 +909,18 @@ class Sequence(Container):
             item = item.evaluate(self.parent)
         return item
 
-    def copyExceptRefsSequence(self, parent=None, key=None, memo=None):
-        # parent == newParent
-        result = Sequence(parent)
-        if parent is not None:
-            result.setPath(makePath(parent.path, key))
-        if memo is not None:
-            memo[id(self)] = result
-            # TODO: use memo below.
+    def keys(self):
+        """
+        Return the keys. Compatibility with Mapping.
+        """
+        return range(len(self.data))
 
-        # recursively copy the rest of our keys
-        # (I know this is not Pythonic, but I copy&pasted from above.)
-        # TODO: fix this code. unify with stuff in Mapping.copyExceptRefs(), if possible.
-        for k in range(len(self.data)):
-            if type(self.data[k]) is Reference:
-                kopi = copy.deepcopy(self.data[k], memo)
-                kopi.config = kopi.findConfig(result)
-            elif type(self.data[k]) is Mapping:
-                kopi = self.data[k].copyExceptRefs(result, '[%d]' % k, memo)
-            elif type(self.data[k]) is Sequence:
-                kopi = self.data[k].copyExceptRefsSequence(result, '[%d]' % k, memo)
-            else:
-                # hopefully only primitive types here
-                kopi = copy.deepcopy(self.data[k], memo)
-            #setattr(result, k, kopi)
-            result.append(kopi, '')
-
-        return result
+    def __setattr__(self, idx, value):
+        """
+        Adds a value to the Sequence. Compatibility with Mapping.
+        """
+        assert(idx == len(self.data))
+        self.append(value, '')
 
     def __getitem__(self, index):
         data = object.__getattribute__(self, 'data')

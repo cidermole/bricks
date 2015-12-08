@@ -381,7 +381,7 @@ class ConfigGenerator(object):
     def __init__(self, cfgFileName, searchPath):
         configSearchPath = config.ConfigSearchPath([searchPath])
         cfg = config.Config(file(cfgFileName), searchPath=configSearchPath)
-        self.experiment = cfg.Experiment.copyExceptRefs(cfg, 'Experiment')
+        self.experiment = cfg.Experiment.instantiate(cfg, 'Experiment')
         self.searchPath = searchPath
         self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchPath))
 
