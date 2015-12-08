@@ -1570,8 +1570,8 @@ RCURLY, COMMA, found %r"
         tt = self.token[0]
         while tt in [STRING, WORD, NUMBER, LCURLY, LBRACK, LPAREN, DOLLAR,
                      TRUE, FALSE, NONE, BACKTICK, MINUS]:
-            suffix = '[%d]' % len(rv)
-            value = self.parseValue(parent, suffix)
+            lsuffix = '[%d]' % len(rv)
+            value = self.parseValue(parent, lsuffix)
             rv.append(value, comment)
             tt = self.token[0]
             comment = self.comment
@@ -1580,8 +1580,39 @@ RCURLY, COMMA, found %r"
                 tt = self.token[0]
                 comment = self.comment
                 continue
-        self.match(RBRACK)
+
+        # parse range syntax, e.g. [1..3] -> [1,2,3]
+        if not self.parseRange(rv, parent, suffix):
+            self.match(RBRACK)
         return rv
+
+    def parseRange(self, rv, parent, suffix):
+        """
+        Quick hack to add [1..3] style ranges which are expanded to a Sequence [1,2,3]
+        @return True if a range has been found, False if we should match an RBRACK.
+        """
+        # parse range syntax, e.g. [1..3] -> [1,2,3]
+        if len(rv.data) == 1 and (type(rv.data[0]) in [int, float]) and self.token[0] == DOT:
+            # why are literal ints parsed into float?
+            begin = int(rv.data[0])
+            #self.match(DOT)
+            if self.token[0] != DOT:
+                raise ConfigFormatError("%s: expecting dots inside range" % (self.location()))
+            self.token = (LBRACK, LBRACK) # fake begin range
+            # parse the range end (for now, as Sequence...)
+            end = self.parseSequence(parent, suffix)
+            if len(end.data) != 1:
+                raise ConfigFormatError("%s: expecting single number for end of range" % (self.location()))
+            end = int(end.data[0])
+
+            # build the range
+            object.__setattr__(rv, 'data', [])
+            object.__setattr__(rv, 'comments', [])
+            for i in range(begin, end + 1):
+                rv.append(i, '')
+            return True
+        else:
+            return False
 
     def parseMapping(self, parent, suffix):
         """
