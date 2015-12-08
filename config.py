@@ -478,10 +478,13 @@ class Container(object):
         # allow both Sequence and Mapping to be copied with this same code.
         if type(self) is Sequence:
             result = Sequence(parent)
-        elif type(self) in [Mapping, Config]:  # Config? untested.
+        elif type(self) is Mapping:
             result = Mapping(parent)
+        elif type(self) is Config:
+            result = Config(parent=parent)
+            result.reader = self.reader
         else:
-            raise AssertionError('instantiate() only supported on Sequence and Mapping.')
+            raise AssertionError('instantiate() only supported on Sequence, Mapping and Config.')
 
         if parent is not None:
             result.setPath(makePath(parent.path, key))
