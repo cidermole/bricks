@@ -501,9 +501,8 @@ class Container(object):
                 # inheritance handled above
                 continue
 
-            if type(self.data[k]) is Reference:
+            if type(self.data[k]) in [Reference, Expression]:
                 kopi = copy.deepcopy(self.data[k])
-                kopi.config = kopi.findConfig(result)
             elif type(self.data[k]) in [Mapping, Sequence]:
                 nextKey = '[%d]' % k if type(self) is Sequence else k
                 kopi = self.data[k].instantiate(result, nextKey)
@@ -1015,7 +1014,6 @@ class Reference(object):
 
     def __deepcopy__(self, memo=None):
         result = Reference(self.type, self.elements[0])
-        #result.setPath(self.path)
         if memo is not None:
             memo[id(self)] = result
         result.elements = copy.deepcopy(self.elements, memo)
@@ -1199,6 +1197,12 @@ class Expression(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def __deepcopy__(self, memo=None):
+        result = Expression(self.op, copy.deepcopy(self.lhs), copy.deepcopy(self.rhs))
+        if memo is not None:
+            memo[id(self)] = result
+        return result
 
     def evaluate(self, container):
         """
