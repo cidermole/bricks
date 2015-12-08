@@ -109,7 +109,7 @@ class Brick(config.Mapping):
         # replace .parts: shortens "Experiment.parts.WordAligner0.parts.Giza12"
         # into "Experiment.WordAligner0.Giza12"
         configPath = self.path if configPath is None else configPath
-        configPath = re.split(r"[%s]+" % re.escape(".[]"), configPath)
+        configPath = filter(None, re.split(r"[%s]+" % re.escape(".[]"), configPath))
         path = ['0']
         path += [part for part in configPath if part != "parts"]
         return os.path.join(*path)
@@ -187,13 +187,14 @@ class Brick(config.Mapping):
                 return os.path.join(*(['..'] + relativePath[2:5]))
 
         # ['_', '_', '_', 'input', 'src']
+        # ['_', '_', '_', 'input', 'corpora', '0'] - for referencing input lists
         # used in referencing the Brick's input in parts
-        if len(relativePath) == 5 and relativePath[0:3] == ['_', '_', '_'] \
+        if len(relativePath) in [5, 6] and relativePath[0:3] == ['_', '_', '_'] \
                 and relativePath[3] in ['output', 'input']:
             if brickOnly:
                 return None
             else:
-                return os.path.join(*(['..'] + relativePath[3:5]))
+                return os.path.join(*(['..'] + relativePath[3:]))
 
         # ['_', 'parts', 'WordAligner0', 'output', 'alignment']
         # used for output dependencies
