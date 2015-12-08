@@ -482,7 +482,7 @@ class Container(object):
             result = Mapping(parent)
         elif type(self) is Config:
             result = Config(parent=parent)
-            result.reader = self.reader
+            result.reader = ConfigReader(result, self.reader.searchPath)
         else:
             raise AssertionError('instantiate() only supported on Sequence, Mapping and Config.')
 
