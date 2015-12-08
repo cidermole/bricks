@@ -489,19 +489,31 @@ class Container(object):
         if parent is not None:
             result.setPath(makePath(parent.path, key))
 
+
         # resolve inheritance, without resolving References
         if 'extends' in self.keys():
             kopi = self['extends'].instantiate(parent, key)
             for k in kopi.keys():
                 setattr(result, k, kopi.data[k])
 
+
         magicLoop = (type(self) is Sequence and key == 'parts')
+
+        # in output of a magic loop Brick
+        #magicOutput = type(self) is Mapping and key == 'output' and 'parts' in self.parent and type(self.parent.parts) is Sequence  # one level above
+        magicOutput = type(self) is Sequence and self.parent.parent is not None and 'parts' in self.parent.parent and type(self.parent.parent.parts) is Sequence
+
         # resolve magic loop for parts
         if magicLoop:
             # special case for magic loops using parts: [{ ... }] syntax
             assert(len(self.keys()) == 1)
             # parent.i is a Sequence of indices to be creating here
             copyKeys = [(0, ei) for ei in parent.i]
+        elif magicOutput and len(self.keys()) == 1 and type(self.data[0]) is Reference and self.data[0].isRecursive():
+            # special case for magic loop Brick's output, which may use the following syntax:
+            # output: { processedItems: [ $parts[$i].output.processed ] }
+            # parent.parent.i is a Sequence of indices to be creating here
+            copyKeys = [(0, ei) for ei in self.parent.parent.i]
         else:
             # the regular case: walk keys, and write one key each
             copyKeys = [(k, k) for k in self.keys()]
@@ -514,6 +526,12 @@ class Container(object):
 
             if type(self.data[k]) in [Reference, Expression]:
                 kopi = copy.deepcopy(self.data[k])
+                if magicOutput:
+                    assert(type(self.data[k]) is Reference)
+                    # resolve recursions using implicit $i inside a virtual output Mapping
+                    outMapping = Mapping(parent)
+                    outMapping.__setattr__('i', kTarget)
+                    kopi = kopi.resolveRecursions(outMapping)
             elif type(self.data[k]) in [Mapping, Sequence]:
                 nextKey = '[%d]' % kTarget if type(result) is Sequence else kTarget
                 kopi = self.data[k].instantiate(result, nextKey)
@@ -1033,6 +1051,26 @@ class Reference(object):
         result.elements = copy.deepcopy(self.elements, memo)
         return result
 
+    def resolveRecursions(self, container):
+        """
+        Copy this Reference, and resolve its internal recursions to make it
+        a plain Reference.
+        """
+        # copy
+        result = Reference(self.type, self.elements[0])
+        elements = copy.deepcopy(self.elements)
+        # resolve recursions
+        newElements = elements[0:1]
+        for (t, e) in elements[1:]:
+            if t == DOLLAR:
+                e = e.resolve(container)
+                # we assume that this has been an index, of the $i sort:
+                # $parts[$i].output.processed
+                t = LBRACK if type(e) in [int, float] else DOT
+            newElements.append((t, e))
+        result.elements = newElements
+        return result
+
     def addElement(self, type, ident):
         """
         Add an element to the reference.
@@ -1056,6 +1094,13 @@ class Reference(object):
         while (container is not None) and not isinstance(container, Config):
             container = object.__getattribute__(container, 'parent')
         return container
+
+    def isRecursive(self):
+        """
+        @return: True if this Reference contains a Reference index, e.g.
+        $parts[$i].output.processed
+        """
+        return (DOLLAR in zip(*self.elements[1:])[0])
 
     def resolve(self, container):
         return self.resolve2(container)[0]
