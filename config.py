@@ -489,11 +489,11 @@ class Container(object):
         if parent is not None:
             result.setPath(makePath(parent.path, key))
 
-        # resolve inheritance
+        # resolve inheritance, without resolving References
         if 'extends' in self.keys():
             kopi = self['extends'].instantiate(parent, key)
             for k in kopi.keys():
-                setattr(result, k, kopi[k])
+                setattr(result, k, kopi.data[k])
 
         # recursively copy the rest of our keys
         for k in self.keys():
