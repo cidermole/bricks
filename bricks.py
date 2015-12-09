@@ -110,7 +110,8 @@ class Brick(config.Mapping):
         # replace .parts: shortens "Experiment.parts.WordAligner0.parts.Giza12"
         # into "Experiment.WordAligner0.Giza12"
         configPath = self.path if configPath is None else configPath
-        configPath = filter(None, re.split(r"[%s]+" % re.escape(".[]"), configPath))
+        #configPath = filter(None, re.split(r"[%s]+" % re.escape(".[]"), configPath))
+        configPath = self.pathParts()
         path = ['0']
         path += [part for part in configPath if part != "parts"]
         return os.path.join(*path)
@@ -380,8 +381,6 @@ class ConfigGenerator(object):
         self.searchPath = searchPath
         self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchPath))
 
-        print(self.experiment.parts.PhraseTable0.parts.LexReordering0.orient)
-
     def replaceFileContents(self, fileName, newContents):
         """
         Only replace fileName with newContents if the contents differ
@@ -463,7 +462,7 @@ if __name__ == '__main__':
     appDir = os.path.dirname(os.path.realpath(__file__))
     searchPath = os.path.join(appDir, 'bricks')
 
-    logLevel = logging.DEBUG
+    logLevel = logging.ERROR
     gen = ConfigGenerator(sys.argv[1], searchPath, logLevel)
     gen.generateBricks(gen.experiment)
 

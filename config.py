@@ -93,6 +93,7 @@ from types import StringType, UnicodeType
 import codecs
 import logging
 import os
+import re
 import sys
 
 WORD = 'a'
@@ -439,6 +440,12 @@ class Container(object):
                 value = repr(value)
             stream.write('%s%s%s' % (indstr, value, NEWLINE))
 
+    def pathParts(self):
+        """
+        @return: our path, in str parts for either string keys, or numeric sequence keys.
+        """
+        return filter(None, re.split(r"[%s]+" % re.escape(".[]"), self.path))
+
     def instantiate(self, parent=None, key=None):
         """
         Copy this Container, resolving inheritance, but without resolving References.
@@ -458,32 +465,32 @@ class Container(object):
         else:
             raise AssertionError('instantiate() only supported on Sequence, Mapping and Config.')
 
-
-        # TODO: is this already recursive?
         # resolve inheritance, without resolving References
         if 'extends' in self.keys():
             kopi = self['extends'].instantiate(parent, key)
-            if 'parts' in kopi.keys() or key == 'PhraseTable0':
-                assert(kopi.parts.parent == kopi)
-                assert(kopi.parent == parent)
             result = kopi
-            #for k in kopi.keys():
-            #    # TODO: fix reparenting here
-            #    if type(kopi.data[k]) in [Mapping, Sequence]:
-            #        # reparent the copies
-            #        kopi.data[k].parent = result
-            #    setattr(result, k, kopi.data[k])
 
         if parent is not None:
             result.setPath(makePath(parent.path, key))
 
-        magicLoop = (type(self) is Sequence and key == 'parts')
 
-        # TODO: make sane names / routines for these checks
+        magicLoop = (type(self) is Sequence and key == 'parts')
 
         # in output of a magic loop Brick
         #magicOutput = type(self) is Mapping and key == 'output' and 'parts' in self.parent and type(self.parent.parts) is Sequence  # one level above
-        magicOutput = type(self) is Sequence and self.parent.parent is not None and 'parts' in self.parent.parent and type(self.parent.parent.parts) is Sequence
+
+        haveParent = hasattr(self, 'parent') and object.__getattribute__(self, 'parent') is not None
+        haveGrandparent = haveParent and hasattr(self.parent, 'parent') and object.__getattribute__(self.parent, 'parent') is not None
+
+        # is our grandparent a magic loop Brick?
+        magicLoopGrandparent = haveGrandparent and 'parts' in self.parent.parent and type(self.parent.parent.parts) is Sequence
+
+        # are we one of the outputs of a magic loop Brick?
+        magicLoopOutput = type(self) is Sequence and magicLoopGrandparent and self.pathParts()[-2] == 'output'
+
+        # detect magic loop Brick's magic output syntax:
+        # # output: { processedItems: [ $parts[$i].output.processed ] }
+        magicOutput = magicLoopOutput and len(self.keys()) == 1 and type(self.data[0]) is Reference and self.data[0].isRecursive()
 
         # resolve magic loop for parts
         if magicLoop:
@@ -491,7 +498,7 @@ class Container(object):
             assert(len(self.keys()) == 1)
             # parent.i is a Sequence of indices to be creating here
             copyKeys = [(0, ei) for ei in parent.i]
-        elif magicOutput and len(self.keys()) == 1 and type(self.data[0]) is Reference and self.data[0].isRecursive():
+        elif magicOutput:
             # special case for magic loop Brick's output, which may use the following syntax:
             # output: { processedItems: [ $parts[$i].output.processed ] }
             # parent.parent.i is a Sequence of indices to be creating here
@@ -499,6 +506,7 @@ class Container(object):
         else:
             # the regular case: walk keys, and write one key each
             copyKeys = [(k, k) for k in self.keys()]
+
 
         # recursively copy the rest of our keys
         for (k, kTarget) in copyKeys:
