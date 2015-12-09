@@ -82,6 +82,7 @@ from __future__ import print_function
 
 import re
 import config
+import logging
 import os
 import sys
 import jinja2
@@ -368,7 +369,11 @@ class TemplateBrick(Brick):
 
 
 class ConfigGenerator(object):
-    def __init__(self, cfgFileName, searchPath):
+    def __init__(self, cfgFileName, searchPath, logLevel=logging.ERROR):
+        ch = logging.StreamHandler()
+        config.logger.addHandler(ch)
+        config.logger.setLevel(logLevel)
+
         configSearchPath = config.ConfigSearchPath([searchPath])
         cfg = config.Config(file(cfgFileName), searchPath=configSearchPath).instantiate()
         self.experiment = cfg.Experiment
@@ -458,7 +463,8 @@ if __name__ == '__main__':
     appDir = os.path.dirname(os.path.realpath(__file__))
     searchPath = os.path.join(appDir, 'bricks')
 
-    gen = ConfigGenerator(sys.argv[1], searchPath)
+    logLevel = logging.DEBUG
+    gen = ConfigGenerator(sys.argv[1], searchPath, logLevel)
     gen.generateBricks(gen.experiment)
 
     # ~/mmt/redo/redo == redo
