@@ -7,6 +7,14 @@
 {% extends "brick.do.jinja" %}
 {% block Work %}
 
+# prepare symlinks: moses does not like gzipped input without .gz suffix
+{% for phraseTable in brick.input.phraseTables -%}
+ln -sf {{ loop.index0 }} input/phraseTables/{{ loop.index0 }}.gz
+{% endfor %}
+{%- for reorderingTable in brick.input.reorderingTables -%}
+ln -sf {{ loop.index0 }} input/reorderingTables/{{ loop.index0 }}.gz
+{% endfor %}
+
 cat <<EOF > output/mosesIni
 
 #########################
@@ -30,10 +38,10 @@ UnknownWordPenalty
 WordPenalty
 PhrasePenalty
 {% for phraseTable in brick.input.phraseTables -%}
-PhraseDictionaryOnDisk name=TranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }} input-factor=0 output-factor=0
+PhraseDictionaryOnDisk name=TranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }}.gz input-factor=0 output-factor=0
 {% endfor %}
 {%- for reorderingTable in brick.input.reorderingTables -%}
-LexicalReordering name=LexicalReordering{{ loop.index0 }} num-features={{ reorderingTable.numReorderingFeatures }} type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ reorderingTable }}
+LexicalReordering name=LexicalReordering{{ loop.index0 }} num-features={{ reorderingTable.numReorderingFeatures }} type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ reorderingTable }}.gz
 {% endfor %}
 {%- for languageModel in brick.input.languageModels -%}
 KENLM lazyken=0 name=LM{{ loop.index0 }} factor=0 path={{ languageModel }} order={{ languageModel.ngramOrder }}
