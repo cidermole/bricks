@@ -4,6 +4,8 @@
  # Essentially just a workaround for creating an arbitrary template file.
  # We may want to implement a more general templating mechanism soon.
  #}
+{% extends "brick.do.jinja" %}
+{% block Work %}
 
 cat <<EOF > output/mosesIni
 
@@ -27,7 +29,7 @@ cat <<EOF > output/mosesIni
 UnknownWordPenalty
 WordPenalty
 PhrasePenalty
-{%- for phraseTable in brick.input.phraseTables -%}
+{% for phraseTable in brick.input.phraseTables -%}
 PhraseDictionaryOnDisk name=TranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }} input-factor=0 output-factor=0
 {% endfor %}
 {%- for reorderingTable in brick.input.reorderingTables -%}
@@ -57,3 +59,5 @@ LM{{ loop.index0 }}= 0.5
 Distortion0= 0.3
 
 EOF
+
+{% endblock %}
