@@ -10,10 +10,17 @@
 # prepare symlinks: moses does not like gzipped input without .gz suffix
 {% for phraseTable in brick.input.phraseTables -%}
 ln -sf {{ loop.index0 }} input/phraseTables/{{ loop.index0 }}.gz
+# slightly abuse input/ folder by binarizing into there:
+{{ brick.MOSES }}/CreateOnDiskPt 1 1 4 100 2 {{ phraseTable }}.gz {{ phraseTable }}-disk
 {% endfor %}
 {%- for reorderingTable in brick.input.reorderingTables -%}
 ln -sf {{ loop.index0 }} input/reorderingTables/{{ loop.index0 }}.gz
 {% endfor %}
+
+{# we could binarize the stuff with {{ brick.MOSES }}/CreateOnDiskPt 1 1 4 100 2 phrase-table.1.gz phrase-table.1.folder #}
+{# and then use PhraseDictionaryOnDisk #}
+
+#
 
 cat <<EOF > output/mosesIni
 
@@ -38,7 +45,7 @@ UnknownWordPenalty
 WordPenalty
 PhrasePenalty
 {% for phraseTable in brick.input.phraseTables -%}
-PhraseDictionaryOnDisk name=TranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }}.gz input-factor=0 output-factor=0
+PhraseDictionaryOnDisk name=TranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }}-disk input-factor=0 output-factor=0
 {% endfor %}
 {%- for reorderingTable in brick.input.reorderingTables -%}
 LexicalReordering name=LexicalReordering{{ loop.index0 }} num-features={{ reorderingTable.numReorderingFeatures }} type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ reorderingTable }}.gz
