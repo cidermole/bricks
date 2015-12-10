@@ -29,6 +29,13 @@
 {% endif %}
 ) | xargs redo-ifchange
 
+# Redirect stdout and stderr of coming commands to logfiles.
+#exec 6<&1  # backup stdout to fd=6
+#exec 7<&2  # backup stderr to fd=7
+
+#exec 1>brick.STDOUT
+#exec 2>brick.STDERR
+
 ### Begin actual work ###
 
 {% block Work %}
@@ -37,6 +44,9 @@
 {%- endblock %}
 
 ### End actual work ###
+
+# Restore stdout
+#exec 1<&6  # restore stdout from fd=6
 
 {% block Complete %}
     # mark as completed (stdout goes to our target file "brick")
