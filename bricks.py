@@ -217,8 +217,14 @@ class Brick(config.Mapping):
                     path = self.referenceDependencyPath(relPath)
                     if path is not None:
                         dependencies.add(path)
-
-        # TODO input Sequences
+                elif type(anyput) is config.Sequence:
+                    # get dependencies from input Sequences
+                    for val in anyput.data:
+                        if type(val) is config.Reference:
+                            relPath = val.relativePath(anyput)
+                            path = self.referenceDependencyPath(relPath[1:])
+                            if path is not None:
+                                dependencies.add(path)
 
         return dependencies
 
