@@ -151,7 +151,7 @@ class Brick(config.Mapping):
         """
         return os.path.abspath(self.filesystemPath())
 
-    def referenceDependencyPath(self, relativePath, brickOnly=True):
+    def referenceDependencyPath(self, anyput, container, brickOnly=True, depth=0):
         """
         Turns a config path referencing another Brick into a filesystem path.
         Used for adding dependencies to the runner system.
@@ -159,6 +159,8 @@ class Brick(config.Mapping):
         @param brickOnly    only reference the brick itself, not the actual input/output file
         """
         #print(brickOnly, relativePath)
+
+        relativePath = anyput.relativePath(container)[depth:]
 
         # This should really, really be integrated in a recursive function which walks
         # the config tree. However, this is how it has grown. Feel free to replace this.
@@ -180,7 +182,19 @@ class Brick(config.Mapping):
         if len(relativePath) in [5, 6] and relativePath[0:3] == ['_', '_', '_'] \
                 and relativePath[3] in ['output', 'input']:
             if brickOnly:
-                return None
+                # it may be the case that the parent's input we reference
+                # has a dependency. We must inherit that dependency here.
+                assert(type(anyput) is config.Reference)
+                # TODO: magicInputBrick() should have gone this route.
+                parentInput = anyput.resolve2(container, resolveRefs=False)[0]
+                if type(parentInput) is not config.Reference or relativePath[3] != 'input':
+                    # parent input has no dependency
+                    return None
+                # one up: this Brick
+                # another two up: Brick parent
+                parent = Brick(container.parent.parent.parent)
+                parentPath = parent.referenceDependencyPath(parentInput, parent.input)
+                return os.path.join('..', parentPath) if parentPath is not None else None
             else:
                 return os.path.join(*(['..'] + relativePath[3:]))
 
@@ -213,16 +227,14 @@ class Brick(config.Mapping):
                 if type(anyput) is config.Reference:
                     # we may be referencing another Brick, which we then
                     # need to add as a dependency.
-                    relPath = anyput.relativePath(mapping)
-                    path = self.referenceDependencyPath(relPath)
+                    path = self.referenceDependencyPath(anyput, mapping)
                     if path is not None:
                         dependencies.add(path)
                 elif type(anyput) is config.Sequence:
                     # get dependencies from input Sequences
                     for val in anyput.data:
                         if type(val) is config.Reference:
-                            relPath = val.relativePath(anyput)
-                            path = self.referenceDependencyPath(relPath[1:])
+                            path = self.referenceDependencyPath(val, anyput, depth=1)
                             if path is not None:
                                 dependencies.add(path)
 
@@ -245,8 +257,7 @@ class Brick(config.Mapping):
                 self.linkPaths(inout, anyput, aput, i, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, str(i)))
         elif type(anyput) is config.Reference:
             # referencing another Brick
-            relPath = anyput.relativePath(inoutMapping)
-            linkSource = self.referenceDependencyPath(relPath, brickOnly=False)
+            linkSource = self.referenceDependencyPath(anyput, inoutMapping, brickOnly=False)
         elif type(anyput) is bool:
             # no specification at all, e.g. output: { trg }
             # here, config parser falls back to defining a bool trg=True
