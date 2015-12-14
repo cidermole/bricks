@@ -15,6 +15,17 @@ ln -sf {{ loop.index0 }} input/phraseTables/{{ loop.index0 }}.gz
 ln -sf {{ loop.index0 }} input/reorderingTables/{{ loop.index0 }}.gz
 {% endfor %}
 
+# for binary lexicalized reordering, moses requires the suffixed file, e.g.
+# we have "input/binaryReorderingTables/0"
+# we need "input/binaryReorderingTables/0.binlexr.idx" and friends
+#
+{% for reorderingTable in brick.input.binaryReorderingTables -%}
+for suffix in binlexr.idx binlexr.srctree binlexr.tgtdata binlexr.voc0 binlexr.voc1; do
+  basePrefix=$(readlink -f {{ reorderingTable }})
+  ln -sf $basePrefix.$suffix input/binaryReorderingTables/{{ loop.index0 }}.$suffix
+done
+{% endfor %}
+
 ###################################################
 
 cat <<EOF > output/mosesIni
@@ -53,7 +64,7 @@ LexicalReordering name=BinLexicalReordering{{ loop.index0 }} num-features={{ reo
 {% endfor %}
 {%- for languageModel in brick.input.languageModels -%}
 KENLM lazyken=0 name=LM{{ loop.index0 }} factor=0 path={{ languageModel }} order={{ languageModel.ngramOrder }}
-{% endfor %}
+{% endfor -%}
 Distortion
 
 # dense weights for feature functions
@@ -77,7 +88,7 @@ BinLexicalReordering{{ loop.index0 }}={% for i in range(reorderingTable.numReord
 {% endfor %}
 {%- for languageModel in brick.input.languageModels -%}
 LM{{ loop.index0 }}= 0.5
-{% endfor %}
+{% endfor -%}
 Distortion0= 0.3
 
 EOF
