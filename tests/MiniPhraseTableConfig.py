@@ -1,4 +1,5 @@
 from ConfigTest import ConfigTest
+from brick_config import config
 
 
 class MiniPhraseTableConfig(ConfigTest):
@@ -16,3 +17,10 @@ class MiniPhraseTableConfig(ConfigTest):
 
     def testInheritedValue(self):
         self.assertEqual(self.cfg.Experiment.parts.DevTables0.numPhraseFeatures, 4)
+
+    # elaborate further on the failure of testInheritedValue()
+
+    def testReference(self):
+        # bug: this Reference should not have been resolved when copying in instantiate()
+        numPhraseFeatures = self.cfg.Experiment.parts.DevTables0.data['numPhraseFeatures']
+        self.assertEqual(type(numPhraseFeatures), config.Reference)
