@@ -1,4 +1,13 @@
 #!/bin/bash
+#
+# Build a clean moses revision in a staging area $AUTO_TARGET_DIR.
+#
+# Dependencies are built a single time for the staging area.
+#
+# Then, the specified source revision is cleanly checked out and built
+# from scratch, except if the exact configuration has already been
+# built before.
+
 set -e
 
 #BUILD_OPTIONS=""
@@ -16,6 +25,10 @@ MOSES_BRANCH=master
 
 # to speed up the build: pass -m moses, or -m moses2
 MOSES_BIN_TARGET=""
+
+if [ "$MOSES_BIN_TARGET" == "" ]; then
+    MOSES_BIN_TARGET_OUT="moses"
+fi
 
 # parse command line args
 OPTIND=1
@@ -144,8 +157,14 @@ MOSES_TARGET_DIR=$AUTO_TARGET_DIR/moses.$MOSES_BRANCH.$MOSES_REV.$BUILD_TYPE
 mkdir -p $MOSES_TARGET_DIR
 
 
-if [ -e $MOSES_TARGET_DIR/bin/moses ]; then
+if [ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT ]; then
     # there is already a build for this revision
+
+    # Restore stdout
+    exec 1<&6  # restore stdout from fd=6
+
+    # our only stdout: the true path to moses binary
+    echo $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT
     exit 0
 fi
 
@@ -264,14 +283,10 @@ popd
 # Restore stdout
 exec 1<&6  # restore stdout from fd=6
 
-if [ "$MOSES_BIN_TARGET" == "" ]; then
-    MOSES_BIN_TARGET="moses"
-fi
-
 # our only stdout: the true path to moses binary
-echo "$MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET"
+echo "$MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT"
 
 
 # implicit return value
-[ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET ]
+[ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT ]
 
