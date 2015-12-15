@@ -51,7 +51,7 @@ UnknownWordPenalty
 WordPenalty
 PhrasePenalty
 {% for phraseTable in brick.input.phraseTables -%}
-PhraseDictionaryMemory name=MemTranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }}.gz input-factor=0 output-factor=0
+PhraseDictionaryMemory name=TranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }}.gz input-factor=0 output-factor=0
 {% endfor %}
 {%- for phraseTable in brick.input.binaryPhraseTables -%}
 PhraseDictionaryOnDisk name=DiskTranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }} input-factor=0 output-factor=0
@@ -75,7 +75,7 @@ UnknownWordPenalty0= 1
 WordPenalty0= -1
 PhrasePenalty0= 0.2
 {% for phraseTable in brick.input.phraseTables -%}
-MemTranslationModel{{ loop.index0 }}={% for i in range(phraseTable.numPhraseFeatures) %} 0.2{% endfor %}
+TranslationModel{{ loop.index0 }}={% for i in range(phraseTable.numPhraseFeatures) %} 0.2{% endfor %}
 {% endfor %}
 {%- for phraseTable in brick.input.binaryPhraseTables -%}
 DiskTranslationModel{{ loop.index0 }}={% for i in range(phraseTable.numPhraseFeatures) %} 0.2{% endfor %}
