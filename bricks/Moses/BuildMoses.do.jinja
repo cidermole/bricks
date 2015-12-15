@@ -1,0 +1,33 @@
+{% extends "brick.do.jinja" %}
+
+{% block OverrideDependencies %}
+
+build_script='{{ brick.BRICKS }}/scripts/build-moses.sh -s {{ brick.srcRepo }} \
+  -r {{ brick.revision }} -b {{ brick.branch }} -t {{ brick.buildType }} \
+  -a {{ brick.AUTO_BUILD_DIR }} -m "{{ brick.target }}"'
+
+# check to see if anything needs to be re-run
+if $build_script -q; then
+  # no need to do anything
+  redo-ifchange
+else
+  # need to rebuild
+  redo-always
+fi
+
+{% endblock %}
+
+{% block Work %}
+
+# run build script
+moses_bin=$($build_script)
+
+# out of curiosity, fetch the description including revision
+full_name=$(basename $(dirname $(dirname $moses_bin)))
+
+# create real copy of the moses binary
+#cp $moses_bin output/mosesBin
+cp $moses_bin output/$full_name
+ln -sf $full_name output/mosesBin
+
+{% endblock %}

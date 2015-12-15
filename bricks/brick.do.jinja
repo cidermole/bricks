@@ -15,6 +15,7 @@
 # Instead of outputting each dependency as "redo-ifchange dependency",
 # we collect them onto one "redo-ifchange", to improve parallelism.
 
+{% block OverrideDependencies %}
 (
 {% block Dependencies %}
     # dependencies
@@ -28,6 +29,7 @@
     true
 {% endif %}
 ) | xargs redo-ifchange
+{% endblock %}
 
 # Redirect stdout and stderr of coming commands to logfiles.
 #exec 6<&1  # backup stdout to fd=6

@@ -26,13 +26,15 @@ MOSES_BRANCH=master
 # to speed up the build: pass -m moses, or -m moses2
 MOSES_BIN_TARGET=""
 
+MODE=""
+
 if [ "$MOSES_BIN_TARGET" == "" ]; then
     MOSES_BIN_TARGET_OUT="moses"
 fi
 
 # parse command line args
 OPTIND=1
-while getopts "h?s:r:b:a:t:m:" opt; do
+while getopts "h?s:r:b:a:t:m:q?" opt; do
     case "$opt" in
     s)
         # source repository
@@ -58,6 +60,12 @@ while getopts "h?s:r:b:a:t:m:" opt; do
     m)
         # moses binary target
         MOSES_BIN_TARGET=$OPTARG
+        ;;
+
+    q)
+        # quick check if anything needs to be built.
+        # returns 0 if everything is up-to-date (no work necessary).
+        MODE="check"
         ;;
 
     h|\?)
@@ -121,7 +129,7 @@ function get_git_revision() {
 
     git remote remove origin
     git remote add origin $MOSES_SRC_REPO
-    git fetch >/dev/null
+    git fetch >/dev/null 2>&1
     git checkout $MOSES_BRANCH
     git checkout $MOSES_REV
 
@@ -168,6 +176,11 @@ if [ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT ]; then
     exit 0
 fi
 
+if [ "$MODE" == "check" ]; then
+    echo >&2 "Need to build this revision $MOSES_REV"
+    exit 1
+fi
+
 ensure_have_dependencies
 ensure_have_moses_cached
 
@@ -182,7 +195,7 @@ pushd $(basename $MOSES_TARGET_DIR)
 
 git remote remove origin
 git remote add origin $MOSES_SRC_REPO
-git fetch >/dev/null
+git fetch >/dev/null 2>&1
 git checkout $MOSES_BRANCH
 git checkout $MOSES_REV
 
