@@ -55,5 +55,47 @@ class OverrideMapping(ConfigTest):
 
     def testMappingPresent(self):
         self.assertTrue('mapping' in self.cfg.Derived, "Derived.mapping should exist")
-        self.assertEqual(self.cfg.Derived.mapping.a, 'apricot', "Derived.mapping.a should not be inherited from Base.mapping.a")
-        self.assertEqual(self.cfg.Derived.mapping.b, 'blackberry', "Derived.mapping.b should not be inherited from Base.mapping.b")
+        self.assertEqual(self.cfg.Derived.mapping.a, 'apricot')  # "Derived.mapping.a should not be inherited from Base.mapping.a"
+        self.assertEqual(self.cfg.Derived.mapping.b, 'blackberry')  # "Derived.mapping.b should not be inherited from Base.mapping.b"
+
+
+class OverrideInheritMapping(ConfigTest):
+    CONFIG = """
+    Derived: {
+      extends: $Base
+      mapping: { key: value }
+    }
+
+    Base: {
+      key: $mapping.key
+    }
+    """
+
+    def testInherits(self):
+        self.assertTrue('key' in self.cfg.Derived, "Derived.key should be inherited from Base.key")
+        self.assertFalse('mapping' in self.cfg.Base, "Base.mapping should not be defined")
+
+    def testReference(self):
+        self.assertEqual(self.cfg.Derived.key, 'value')  # "Derived.key should get the referenced, inherited value from Derived.mapping.key"
+
+
+class ReferenceInheritMapping(ConfigTest):
+    CONFIG = """
+    Derived: {
+      extends: $Base
+      mapping: { key: newValue }
+    }
+
+    Base: {
+      key: $mapping.key
+      mapping: { key: oldValue }
+    }
+    """
+
+    def testInherits(self):
+        self.assertTrue('key' in self.cfg.Derived, "Derived.key should be inherited from Base.key")
+        self.assertTrue('mapping' in self.cfg.Base, "Base.mapping should be defined")
+        self.assertEqual(self.cfg.Base.mapping.key, 'oldValue')  # "Base.mapping.key should stay unchanged"
+
+    def testReference(self):
+        self.assertEqual(self.cfg.Derived.key, 'newValue')  # "Derived.key should get the referenced, inherited value from Derived.mapping.key"
