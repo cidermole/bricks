@@ -5,13 +5,46 @@ set -e
 BUILD_TYPE="Release"
 
 # later, arg
-#MOSES_TARGET_DIR=/home/david/build/auto/moses.master
 AUTO_TARGET_DIR=/home/david/build/auto
 
-MOSES_REPO=git@github.com:moses-smt/mosesdecoder.git
+MOSES_SRC_REPO=git@github.com:moses-smt/mosesdecoder.git
 MOSES_CACHED_REPO=git@github.com:moses-smt/mosesdecoder.git
 MOSES_REV=master
 MOSES_BRANCH=master
+
+
+# parse command line args
+OPTIND=1
+while getopts "s:r:b:a:t:" opt; do
+    case "$opt" in
+    s)
+        # source repository
+        MOSES_SRC_REPO="$OPTARG"
+        ;;
+    r)
+        # revision
+        MOSES_REV=$OPTARG
+        ;;
+    b)
+        # branch
+        MOSES_BRANCH=$OPTARG
+        ;;
+    a)
+        # AUTO_TARGET_DIR
+        AUTO_TARGET_DIR="$OPTARG"
+        ;;
+    t)
+        # build type
+        BUILD_TYPE=$OPTARG
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+[ "$1" = "--" ] && shift
+
+
 
 # pattern for directory name: moses.branch.rev.BuildType
 # this ensures we build different configs separately
@@ -63,7 +96,7 @@ git clone $MOSES_CACHED_DIR $(basename $MOSES_TARGET_DIR)
 pushd $(basename $MOSES_TARGET_DIR)
 
 git remote remove origin
-git remote add origin $MOSES_REPO
+git remote add origin $MOSES_SRC_REPO
 git fetch
 git checkout $MOSES_BRANCH
 git checkout $MOSES_REV
