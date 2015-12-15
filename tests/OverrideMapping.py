@@ -1,7 +1,7 @@
 from ConfigTest import ConfigTest
 
 
-class InheritMapping(ConfigTest):
+class Inherit(ConfigTest):
     CONFIG = """
     Base: {
       mapping: {
@@ -25,7 +25,7 @@ class InheritMapping(ConfigTest):
         self.assertEqual(self.cfg.Derived.mapping.b, 'bananas', "Derived.mapping.b should be inherited from Base.mapping.b")
 
 
-class OverrideMapping(ConfigTest):
+class Override(ConfigTest):
     CONFIG = """
     Base: {
       mapping: {
@@ -59,7 +59,7 @@ class OverrideMapping(ConfigTest):
         self.assertEqual(self.cfg.Derived.mapping.b, 'blackberry')  # "Derived.mapping.b should not be inherited from Base.mapping.b"
 
 
-class OverrideInheritMapping(ConfigTest):
+class OverrideInherit(ConfigTest):
     CONFIG = """
     Derived: {
       extends: $Base
@@ -79,7 +79,7 @@ class OverrideInheritMapping(ConfigTest):
         self.assertEqual(self.cfg.Derived.key, 'value')  # "Derived.key should get the referenced, inherited value from Derived.mapping.key"
 
 
-class ReferenceInheritMapping(ConfigTest):
+class ReferenceInherit(ConfigTest):
     CONFIG = """
     Derived: {
       extends: $Base

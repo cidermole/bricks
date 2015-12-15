@@ -2,7 +2,7 @@ from ConfigTest import ConfigTest
 from brick_config import config
 
 
-class MiniPhraseTableConfig(ConfigTest):
+class InheritMapping(ConfigTest):
     def setUp(self):
         self.setupLogging()
         self.setupSearchPath()
@@ -45,7 +45,7 @@ class MiniPhraseTableConfig(ConfigTest):
         self.assertEqual(parentPath, 'Bricks.Phrase.Post.FilterBinarizeTables')
 
 
-class MiniPhraseTableConfigNoInstantiate(ConfigTest):
+class NoInstantiate(ConfigTest):
     def setUp(self):
         self.setupLogging()
         self.setupSearchPath()
@@ -61,3 +61,9 @@ class MiniPhraseTableConfigNoInstantiate(ConfigTest):
 
         # flatness: path is relative to Config, which is in its own file!
         self.assertEqual(parentPath, 'FilterBinarizeTables')
+
+    def testConfigIncludeType(self):
+        # include
+        self.assertEqual(type(self.cfg.data['Bricks']), config.Config)
+        # include from include
+        self.assertEqual(type(self.cfg.Bricks.data['Phrase']), config.Config)
