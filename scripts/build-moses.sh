@@ -14,10 +14,12 @@ MOSES_CACHED_REPO=git@github.com:moses-smt/mosesdecoder.git
 MOSES_REV=HEAD
 MOSES_BRANCH=master
 
+# to speed up the build: pass -m moses, or -m moses2
+MOSES_BIN_TARGET=""
 
 # parse command line args
 OPTIND=1
-while getopts "h?s:r:b:a:t:" opt; do
+while getopts "h?s:r:b:a:t:m:" opt; do
     case "$opt" in
     s)
         # source repository
@@ -38,6 +40,11 @@ while getopts "h?s:r:b:a:t:" opt; do
     t)
         # build type
         BUILD_TYPE=$OPTARG
+        ;;
+
+    m)
+        # moses binary target
+        MOSES_BIN_TARGET=$OPTARG
         ;;
 
     h|\?)
@@ -203,6 +210,24 @@ esac
 
 
 
+if [ "$MOSES_BIN_TARGET" != "" ]; then
+    case "$MOSES_BIN_TARGET" in
+        moses)
+            BUILD_OPTIONS="$BUILD_OPTIONS moses-cmd//moses"
+            ;;
+
+        moses2)
+            BUILD_OPTIONS="$BUILD_OPTIONS contrib/other-builds/moses2//moses2"
+            ;;
+
+        *)
+            echo $"valid MOSES_BIN_TARGET types: {moses|moses2}"
+            exit 1
+    esac
+fi
+
+
+
 # build using additional build options
 ln -s ../opt ./opt
 #if [ -e ./compile.sh ]; then
@@ -221,6 +246,15 @@ fi
 set -e -o pipefail
 ./bjam --with-irstlm=./opt $WITH_BOOST --with-cmph=./opt --with-xmlrpc-c=./opt --with-mm --with-probing-pt -j$(getconf _NPROCESSORS_ONLN) $BUILD_OPTIONS
 
+
+if [ "$MOSES_BIN_TARGET" != "" ]; then
+    # find the binary, and put it into bin/
+    # we actually find the first, but that should be the only one and hence recent
+    moses_bin_target=$(find . -name "$MOSES_BIN_TARGET" -type f | grep '/bin/' | head -n 1)
+    cp $moses_bin_target bin/
+fi
+
+
 #fi
 
 popd
@@ -230,10 +264,14 @@ popd
 # Restore stdout
 exec 1<&6  # restore stdout from fd=6
 
+if [ "$MOSES_BIN_TARGET" == "" ]; then
+    MOSES_BIN_TARGET="moses"
+fi
+
 # our only stdout: the true path to moses binary
-echo "$MOSES_TARGET_DIR/bin/moses"
+echo "$MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET"
 
 
 # implicit return value
-[ -e $MOSES_TARGET_DIR/bin/moses ]
+[ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET ]
 
