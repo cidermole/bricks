@@ -15,7 +15,7 @@ MOSES_BRANCH=master
 
 # parse command line args
 OPTIND=1
-while getopts "s:r:b:a:t:" opt; do
+while getopts "h?s:r:b:a:t:" opt; do
     case "$opt" in
     s)
         # source repository
@@ -36,6 +36,11 @@ while getopts "s:r:b:a:t:" opt; do
     t)
         # build type
         BUILD_TYPE=$OPTARG
+        ;;
+
+    h|\?)
+        echo "usage: $0 [-s source-repo.git] [-r revision] [-b branch] [-a auto-target-dir] [-t Release|Debug|RelWithDebInfo]"
+        exit 0
         ;;
     esac
 done
