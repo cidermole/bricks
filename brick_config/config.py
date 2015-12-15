@@ -522,7 +522,7 @@ class Container(object):
                     outMapping = Mapping(parent)
                     outMapping.__setattr__('i', kTarget)
                     kopi = kopi.resolveRecursions(outMapping)
-            elif type(self.data[k]) in [Mapping, Sequence]:
+            elif type(self.data[k]) in [Mapping, Config, Sequence]:
                 nextKey = '[%d]' % kTarget if type(result) is Sequence else kTarget
                 kopi = self.data[k].instantiate(result, nextKey)
                 if magicLoop:
