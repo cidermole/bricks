@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Build a clean moses revision in a staging area $AUTO_TARGET_DIR.
+# Build a clean moses revision in a staging area $AUTO_BUILD_DIR.
 #
 # Dependencies are built a single time for the staging area.
 #
@@ -16,7 +16,7 @@ BUILD_TYPE="Release"
 TMP=/tmp/build-moses.$$
 
 # later, arg
-AUTO_TARGET_DIR=/home/david/build/auto
+AUTO_BUILD_DIR=/home/david/build/auto
 
 MOSES_SRC_REPO=git@github.com:moses-smt/mosesdecoder.git
 MOSES_CACHED_REPO=git@github.com:moses-smt/mosesdecoder.git
@@ -47,8 +47,8 @@ while getopts "h?s:r:b:a:t:m:" opt; do
         MOSES_BRANCH=$OPTARG
         ;;
     a)
-        # AUTO_TARGET_DIR
-        AUTO_TARGET_DIR="$OPTARG"
+        # AUTO_BUILD_DIR
+        AUTO_BUILD_DIR="$OPTARG"
         ;;
     t)
         # build type
@@ -72,8 +72,8 @@ shift $((OPTIND-1))
 [ "$1" = "--" ] && shift
 
 
-OPT_DIR=$AUTO_TARGET_DIR/opt
-MOSES_CACHED_DIR=$AUTO_TARGET_DIR/cached-moses
+OPT_DIR=$AUTO_BUILD_DIR/opt
+MOSES_CACHED_DIR=$AUTO_BUILD_DIR/cached-moses
 
 
 
@@ -153,7 +153,7 @@ get_git_revision
 
 # pattern for directory name: moses.branch.rev.BuildType
 # this ensures we build different configs separately
-MOSES_TARGET_DIR=$AUTO_TARGET_DIR/moses.$MOSES_BRANCH.$MOSES_REV.$BUILD_TYPE
+MOSES_TARGET_DIR=$AUTO_BUILD_DIR/moses.$MOSES_BRANCH.$MOSES_REV.$BUILD_TYPE
 mkdir -p $MOSES_TARGET_DIR
 
 
