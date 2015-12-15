@@ -1197,6 +1197,11 @@ class Reference(object):
                 key = firstkey
                 try:
                     logger.debug("Trying to resolve key = %s on current = %s in container = %s", str(key), str(current.path), str(container.path))
+                    if type(key) is str and type(current) is Sequence:
+                        # avoid attempting to resolve str keys on Sequence
+                        # this would yield ConfigResolutionError from Sequence.__getitem__
+                        rv = None
+                        raise AttributeError(key)
                     rv = current[key] if resolveRefs else current.data[key]
                     for item in elements[1:]:
                         key = item[1]
