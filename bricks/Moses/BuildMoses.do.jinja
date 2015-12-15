@@ -2,10 +2,6 @@
 
 {% block OverrideDependencies %}
 
-build_script='{{ brick.BRICKS }}/scripts/build-moses.sh -s {{ brick.srcRepo }} \
-  -r {{ brick.revision }} -b {{ brick.branch }} -t {{ brick.buildType }} \
-  -a {{ brick.AUTO_BUILD_DIR }} -m "{{ brick.target }}"'
-
 redo-always
 
 {% endblock %}
@@ -13,7 +9,9 @@ redo-always
 {% block Work %}
 
 # run build script
-moses_bin=$($build_script)
+moses_bin=$({{ brick.BRICKS }}/scripts/build-moses.sh -s {{ brick.srcRepo }} \
+  -r {{ brick.revision }} -b {{ brick.branch }} -t {{ brick.buildType }} \
+  -a {{ brick.AUTO_BUILD_DIR }} -m "{{ brick.target }}")
 
 # out of curiosity, fetch the description including revision
 full_name=$(basename $(dirname $(dirname $moses_bin)))
