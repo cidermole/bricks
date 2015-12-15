@@ -5,14 +5,26 @@ set -e
 BUILD_TYPE="Release"
 
 # later, arg
-MOSES_TARGET_DIR=/home/david/build/auto/moses.master
-OPT_DIR=$MOSES_TARGET_DIR/../opt
-MOSES_CACHED_DIR=$MOSES_TARGET_DIR/../cached-moses
+#MOSES_TARGET_DIR=/home/david/build/auto/moses.master
+AUTO_TARGET_DIR=/home/david/build/auto
 
 MOSES_REPO=git@github.com:moses-smt/mosesdecoder.git
 MOSES_CACHED_REPO=git@github.com:moses-smt/mosesdecoder.git
 MOSES_REV=master
 MOSES_BRANCH=master
+
+# pattern for directory name: moses.branch.rev.BuildType
+# this ensures we build different configs separately
+MOSES_TARGET_DIR=$AUTO_TARGET_DIR/moses.$MOSES_BRANCH.$MOSES_REV.$BUILD_TYPE
+
+OPT_DIR=$MOSES_TARGET_DIR/../opt
+MOSES_CACHED_DIR=$MOSES_TARGET_DIR/../cached-moses
+
+
+# backup stdout to fd=6
+exec 6<&1
+# redirect stdout to stderr (our stdout has a special meaning below)
+exec 1>&2
 
 
 mkdir -p $MOSES_TARGET_DIR
@@ -113,6 +125,14 @@ fi
 
 popd
 popd
+
+
+# Restore stdout
+exec 1<&6  # restore stdout from fd=6
+
+# our only stdout: the true path to moses binary
+echo "$MOSES_TARGET_DIR/bin/moses"
+
 
 # implicit return value
 [ -e $MOSES_TARGET_DIR/bin/moses ]
