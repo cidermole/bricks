@@ -11,7 +11,7 @@ AUTO_TARGET_DIR=/home/david/build/auto
 
 MOSES_SRC_REPO=git@github.com:moses-smt/mosesdecoder.git
 MOSES_CACHED_REPO=git@github.com:moses-smt/mosesdecoder.git
-MOSES_REV=master
+MOSES_REV=HEAD
 MOSES_BRANCH=master
 
 
