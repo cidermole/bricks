@@ -171,6 +171,8 @@ ln -s ../opt ./opt
 #    ./compile.sh $BUILD_OPTIONS
 #else
 
+# link=static? no?
+
 if have_native_boost; then
     WITH_BOOST=""
 else
@@ -178,7 +180,7 @@ else
 fi
 
 set -e -o pipefail
-./bjam --with-irstlm=./opt "$WITH_BOOST" --with-cmph=./opt --with-xmlrpc-c=./opt --with-mm --with-probing-pt -j$(getconf _NPROCESSORS_ONLN) $BUILD_OPTIONS
+./bjam --with-irstlm=./opt $WITH_BOOST --with-cmph=./opt --with-xmlrpc-c=./opt --with-mm --with-probing-pt -j$(getconf _NPROCESSORS_ONLN) $BUILD_OPTIONS
 
 #fi
 
