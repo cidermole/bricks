@@ -38,8 +38,9 @@ class ConfigTest(unittest.TestCase):
         else:
             raise ValueError("ConfigTest: CONFIG must be either str or dict.")
 
-    def setupConfigFile(self, fileName):
-        self.cfg = config.Config(file(fileName), searchPath=self.configSearchPath).instantiate()
+    def setupConfigFile(self, fileName, instantiate=True):
+        cfg = config.Config(file(fileName), searchPath=self.configSearchPath)
+        self.cfg = cfg.instantiate() if instantiate else cfg
 
     def setUp(self):
         self.setupLogging()
