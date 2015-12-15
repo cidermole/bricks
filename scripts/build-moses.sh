@@ -121,7 +121,7 @@ function get_git_revision() {
 
     git remote remove origin
     git remote add origin $MOSES_SRC_REPO
-    git fetch
+    git fetch >/dev/null
     git checkout $MOSES_BRANCH
     git checkout $MOSES_REV
 
@@ -158,7 +158,7 @@ mkdir -p $MOSES_TARGET_DIR
 
 
 if [ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT ]; then
-    # there is already a build for this revision
+    echo >&2 "There is already a build for this revision $MOSES_REV"
 
     # Restore stdout
     exec 1<&6  # restore stdout from fd=6
@@ -182,7 +182,7 @@ pushd $(basename $MOSES_TARGET_DIR)
 
 git remote remove origin
 git remote add origin $MOSES_SRC_REPO
-git fetch
+git fetch >/dev/null
 git checkout $MOSES_BRANCH
 git checkout $MOSES_REV
 
