@@ -30,6 +30,8 @@ MODE=""
 
 if [ "$MOSES_BIN_TARGET" == "" ]; then
     MOSES_BIN_TARGET_OUT="moses"
+else
+    MOSES_BIN_TARGET_OUT="$MOSES_BIN_TARGET"
 fi
 
 # parse command line args
