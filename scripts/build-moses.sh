@@ -57,6 +57,16 @@ MOSES_CACHED_DIR=$AUTO_TARGET_DIR/cached-moses
 
 
 
+function have_native_boost() {
+    if [ -e /usr/include/boost/version.hpp ]; then
+        boost_version=$(awk '/define BOOST_VERSION/ {print $3}' /usr/include/boost/version.hpp)
+        if [ $boost_version -ge 105900 ]; then
+            # if system has at least Boost 1.59, then don't bother using the other one.
+            return 0
+        fi
+    fi
+    return 1
+}
 
 function ensure_have_moses_cached() {
   if [ ! -e $MOSES_CACHED_DIR ]; then
@@ -73,7 +83,12 @@ function ensure_have_dependencies() {
 
       pushd $(dirname $OPT_DIR)
       # build stuff in ./build, install in ./opt
-      make -f $(dirname $0)/install-dependencies.gmake
+      if have_native_boost; then
+          # all: xmlrpc cmph irstlm boost
+          make -f $(dirname $0)/install-dependencies.gmake xmlrpc cmph irstlm
+      else
+          make -f $(dirname $0)/install-dependencies.gmake
+      fi
       popd
   fi
 }
@@ -185,21 +200,6 @@ case "$BUILD_TYPE" in
         echo $"valid build types: {Release|Debug|RelWithDebInfo}"
         exit 1 
 esac
-
-
-
-
-function have_native_boost() {
-    if [ -e /usr/include/boost/version.hpp ]; then
-        boost_version=$(awk '/define BOOST_VERSION/ {print $3}' /usr/include/boost/version.hpp)
-        if [ $boost_version -ge 105900 ]; then
-            # if system has at least Boost 1.59, then don't bother using the other one.
-            return 0
-        fi
-    fi
-    return 1
-}
-
 
 
 
