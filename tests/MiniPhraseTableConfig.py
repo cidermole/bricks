@@ -28,9 +28,8 @@ class InheritMapping(MiniCfg):
 
     def testParentReference(self):
         # but surely, the parent itself still has it as a reference?
-        # oh wait, nah. That is not where things come from.
         numPhraseFeatures = self.cfg.Bricks.Phrase.Post.FilterBinarizeTables.data['numPhraseFeatures']
-        #self.assertEqual(type(numPhraseFeatures), config.Reference)
+        self.assertEqual(type(numPhraseFeatures), config.Reference)
 
         # .parts.BinarizeReorderingTable0
 
