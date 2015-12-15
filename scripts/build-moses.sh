@@ -145,16 +145,37 @@ esac
 
 
 
+function have_native_boost() {
+    if [ -e /usr/include/boost/version.hpp ]; then
+        boost_version=$(awk '/define BOOST_VERSION/ {print $3}' /usr/include/boost/version.hpp)
+        if [ $boost_version -ge 105900 ]; then
+            # if system has at least Boost 1.59, then don't bother using the other one.
+            return 0
+        fi
+    fi
+    return 1
+}
+
+
+
+
 # build using additional build options
 ln -s ../opt ./opt
-if [ -e ./compile.sh ]; then
-    # recent versions have a ./compile.sh
-    ./compile.sh $BUILD_OPTIONS
+#if [ -e ./compile.sh ]; then
+#    # recent versions have a ./compile.sh
+#    ./compile.sh $BUILD_OPTIONS
+#else
+
+if have_native_boost; then
+    WITH_BOOST=""
 else
-    # untested.
-    set -e -o pipefail
-    ./bjam --with-irstlm=./opt --with-boost=./opt --with-cmph=./opt --with-xmlrpc-c=./opt --with-mm --with-probing-pt -j$(getconf _NPROCESSORS_ONLN) $BUILD_OPTIONS
+    WITH_BOOST="--with-boost=./opt"
 fi
+
+set -e -o pipefail
+./bjam --with-irstlm=./opt "$WITH_BOOST" --with-cmph=./opt --with-xmlrpc-c=./opt --with-mm --with-probing-pt -j$(getconf _NPROCESSORS_ONLN) $BUILD_OPTIONS
+
+#fi
 
 popd
 popd
