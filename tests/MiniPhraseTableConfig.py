@@ -11,19 +11,19 @@ class MiniCfg(ConfigTest):
 
 class InheritMapping(MiniCfg):
     def testInherits(self):
-        self.assertTrue('phraseTable' in self.cfg.Experiment.parts.DevTables0)
+        self.assertTrue('phraseTableConfig' in self.cfg.Experiment.parts.DevTables0)
         self.assertTrue('numPhraseFeatures' in self.cfg.Experiment.parts.DevTables0)
 
     def testParentValue(self):
         self.assertEqual(self.cfg.Experiment.parts.PhraseTable0.numPhraseFeatures, 4)
 
     def testInheritedValue(self):
-        self.assertEqual(self.cfg.Experiment.parts.DevTables0.phraseTable.numPhraseFeatures, 4)
+        self.assertEqual(self.cfg.Experiment.parts.DevTables0.phraseTableConfig.numPhraseFeatures, 4)
 
     # elaborate further on the failure of testInheritedValue()
 
     def testReference(self):
-        numPhraseFeatures = self.cfg.Experiment.parts.DevTables0.phraseTable.data['numPhraseFeatures']
+        numPhraseFeatures = self.cfg.Experiment.parts.DevTables0.phraseTableConfig.data['numPhraseFeatures']
         self.assertEqual(type(numPhraseFeatures), config.Reference)
 
     def testParentReference(self):
