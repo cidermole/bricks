@@ -28,12 +28,6 @@ MOSES_BIN_TARGET=""
 
 MODE=""
 
-if [ "$MOSES_BIN_TARGET" == "" ]; then
-    MOSES_BIN_TARGET_OUT="moses"
-else
-    MOSES_BIN_TARGET_OUT="$MOSES_BIN_TARGET"
-fi
-
 # parse command line args
 OPTIND=1
 while getopts "h?s:r:b:a:t:m:q?" opt; do
@@ -80,6 +74,13 @@ done
 shift $((OPTIND-1))
 
 [ "$1" = "--" ] && shift
+
+
+if [ "$MOSES_BIN_TARGET" == "" ]; then
+    MOSES_BIN_TARGET_OUT="moses"
+else
+    MOSES_BIN_TARGET_OUT="$MOSES_BIN_TARGET"
+fi
 
 
 OPT_DIR=$AUTO_BUILD_DIR/opt
