@@ -81,7 +81,7 @@
 from __future__ import print_function
 
 import re
-import config
+from brick_config import config
 import logging
 import os
 import sys

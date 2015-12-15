@@ -48,7 +48,7 @@ A simple example - with the example configuration file::
 
 a program to read the configuration would be::
 
-    from config import Config
+    from brick_config import Config
 
     f = file('simple.cfg')
     cfg = Config(f)
@@ -449,10 +449,10 @@ class Container(object):
     def instantiate(self, parent=None, key=None):
         """
         Copy this Container, resolving inheritance, but without resolving References.
-        Adds the Container below the parent in a new config tree.
-        @param parent: new parent in the config tree we are copying to
+        Adds the Container below the parent in a new brick_config tree.
+        @param parent: new parent in the brick_config tree we are copying to
         @param key:    name (or index, for Sequence parent) of this Container
-        @return: a copy of this Container in the new config tree
+        @return: a copy of this Container in the new brick_config tree
         """
         # allow both Sequence and Mapping to be copied with this same code.
         if type(self) is Sequence:
@@ -732,7 +732,7 @@ class Mapping(Container):
 
 class ConfigSearchPath(object):
     """
-    Specify a search path for global config file name references.
+    Specify a search path for global brick_config file name references.
     """
     def __init__(self, folders):
         self.folders = folders
@@ -781,7 +781,7 @@ class Config(Mapping):
         in the configuration hierarchy.
         @type parent: a L{Container} instance.
         """
-        #print("loading config %s" % streamOrFile)
+        #print("loading brick_config %s" % streamOrFile)
         Mapping.__init__(self, parent)
         object.__setattr__(self, 'reader', ConfigReader(self, searchPath))
         object.__setattr__(self, 'namespaces', [Config.Namespace()])
@@ -1705,7 +1705,7 @@ RCURLY, COMMA, found %r"
             if self.token[0] == STRING:
                 tt, fn = self.match(STRING)
                 if fn[0] == '<':
-                    # global config file path
+                    # global brick_config file path
                     fn = fn.replace('<', '"').replace('>', '"')
                     fn = eval(fn)  # evaluate string
                     fn = self.searchPath.searchFile(fn)
