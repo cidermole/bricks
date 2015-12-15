@@ -12,6 +12,7 @@ class ConfigTest(unittest.TestCase):
     """
 
     CONFIG = ""
+    # or: CONFIG = {'config1': """Brickname: { ... }"""}
 
     def setupLogging(self):
         logLevel = logging.INFO
@@ -25,7 +26,17 @@ class ConfigTest(unittest.TestCase):
         assert(os.path.exists(searchPath))
 
         configSearchPath = config.ConfigSearchPath([searchPath])
-        self.cfg = config.Config(StringIO(self.CONFIG), searchPath=configSearchPath).instantiate()
+
+        if type(self.CONFIG) is str:
+            # CONFIG is a single configuration str, just create it
+            self.cfg = config.Config(StringIO(self.CONFIG), searchPath=configSearchPath).instantiate()
+        elif type(self.CONFIG) is dict:
+            # if CONFIG is dict, create one config per key/value pair
+            self.cfg = {}
+            for k, c in self.CONFIG:
+                self.cfg[k] = config.Config(StringIO(c), searchPath=configSearchPath).instantiate()
+        else:
+            raise ValueError("ConfigTest: CONFIG must be either str or dict.")
 
     def setUp(self):
         self.setupLogging()
