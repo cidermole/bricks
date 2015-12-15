@@ -392,9 +392,15 @@ class ConfigGenerator(object):
         config.logger.addHandler(ch)
         config.logger.setLevel(logLevel)
 
+        appDir = os.path.dirname(os.path.realpath(__file__))
+
         configSearchPath = config.ConfigSearchPath([searchPath])
         cfg = config.Config(file(cfgFileName), searchPath=configSearchPath).instantiate()
         self.experiment = cfg.Experiment
+
+        # implicit str $BRICKS: path to bricks program root directory
+        self.experiment.BRICKS = appDir
+
         self.searchPath = searchPath
         self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchPath))
 
