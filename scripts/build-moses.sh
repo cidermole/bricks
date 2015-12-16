@@ -129,7 +129,10 @@ function get_git_revision() {
 
     # start in subshell, which goes to /dev/null
     # we are not interested in any noise here.
-    (
+
+    # the weird contraption is to get $MOSES_REV out of the subshell
+
+    MOSES_REV=$( ( \
     mkdir -p $TMP
     git clone $MOSES_CACHED_DIR $TMP/moses.check
     pushd $TMP/moses.check
@@ -147,7 +150,9 @@ function get_git_revision() {
 
     popd
     rm -rf $TMP
-    ) >/dev/null 2>&1
+
+    echo >&3 $MOSES_REV
+    ) 3>&1 >/dev/null 2>&1 )
 }
 
 
