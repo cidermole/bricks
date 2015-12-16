@@ -26,6 +26,9 @@ MOSES_BRANCH=master
 # to speed up the build: pass -m moses, or -m moses2
 MOSES_BIN_TARGET=""
 
+TOOLSET_GCC=""
+BJAM_TOOLSET=""
+
 MODE=""
 
 # parse command line args
@@ -64,6 +67,11 @@ while getopts "h?s:r:b:a:t:m:q?" opt; do
         MODE="check"
         ;;
 
+    g)
+        # absolute GCC (GNU Compiler Collection) install folder of the format "/opt/gcc-4.9.2"
+        TOOLSET_GCC="$OPTARG"
+        ;;
+
     h|\?)
         echo "usage: $0 [-s source-repo.git] [-r revision] [-b branch] [-a auto-target-dir] [-t Release|Debug|RelWithDebInfo]"
         exit 0
@@ -85,6 +93,15 @@ fi
 
 OPT_DIR=$AUTO_BUILD_DIR/opt
 MOSES_CACHED_DIR=$AUTO_BUILD_DIR/cached-moses
+
+
+
+if [ "$TOOLSET_GCC" != "" ]; then
+    # this PATH affects both the bjam build of moses below, and the build of dependencies like boost itself
+    # (in the install-dependencies.gmake file).
+    export PATH=$TOOLSET_GCC/bin:$PATH
+    BJAM_TOOLSET="toolset=$(basename $TOOLSET_GCC)"
+fi
 
 
 
@@ -289,7 +306,7 @@ else
 fi
 
 set -e -o pipefail
-./bjam --with-irstlm=./opt $WITH_BOOST --with-cmph=./opt --with-xmlrpc-c=./opt --with-mm --with-probing-pt -j$(getconf _NPROCESSORS_ONLN) $BUILD_OPTIONS
+./bjam --with-irstlm=./opt $WITH_BOOST --with-cmph=./opt --with-xmlrpc-c=./opt --with-mm --with-probing-pt -j$(getconf _NPROCESSORS_ONLN) $BJAM_TOOLSET $BUILD_OPTIONS
 
 
 if [ "$MOSES_BIN_TARGET" != "" ]; then
