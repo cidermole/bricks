@@ -40,6 +40,21 @@ class ConfigTest(unittest.TestCase):
 
     def setupConfigFile(self, fileName, instantiate=True):
         cfg = config.Config(file(fileName), searchPath=self.configSearchPath)
+
+        # can we split this off ConfigGenerator somehow, to avoid duplicate code? (note parent=cfg vs. parent=self.cfg, same in cfg.Setup)
+        setupFileName = None
+        if setupFileName is None:
+            setupFileName = 'Setups/%s.cfg' % os.uname()[1].capitalize()
+        # resolve relative path in bricks program root
+        setupFileName = self.configSearchPath.searchGlobalFile(setupFileName)
+        setup = config.Config(setupFileName, parent=cfg, searchPath=self.configSearchPath)
+        # implicit str $BRICKS: path to bricks program root directory
+        appDir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))  # two up: bricks program root
+        setup.BRICKS = appDir
+
+        # implicit Mapping $Setup: Experiment can inherit $Setup for machine-specific config keys
+        cfg.Setup = setup
+
         self.cfg = cfg.instantiate() if instantiate else cfg
 
     def setUp(self):
