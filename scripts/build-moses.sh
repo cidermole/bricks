@@ -33,7 +33,7 @@ MODE=""
 
 # parse command line args
 OPTIND=1
-while getopts "h?s:r:b:a:t:m:q?" opt; do
+while getopts "h?s:r:b:a:t:m:q?g:" opt; do
     case "$opt" in
     s)
         # source repository
