@@ -126,13 +126,17 @@ function ensure_have_dependencies() {
 
 function get_git_revision() {
     ensure_have_moses_cached
+
+    # start in subshell, which goes to /dev/null
+    # we are not interested in any noise here.
+    (
     mkdir -p $TMP
     git clone $MOSES_CACHED_DIR $TMP/moses.check
     pushd $TMP/moses.check
 
     git remote remove origin
     git remote add origin $MOSES_SRC_REPO
-    git fetch >/dev/null 2>&1
+    git fetch
     git checkout $MOSES_BRANCH
     git checkout $MOSES_REV
 
@@ -143,6 +147,7 @@ function get_git_revision() {
 
     popd
     rm -rf $TMP
+    ) >/dev/null 2>&1
 }
 
 
@@ -200,7 +205,7 @@ git remote remove origin
 git remote add origin $MOSES_SRC_REPO
 git fetch >/dev/null 2>&1
 git checkout $MOSES_BRANCH
-git checkout $MOSES_REV
+git checkout $MOSES_REV >/dev/null 2>&1
 
 
 function have_option() {
