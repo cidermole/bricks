@@ -60,7 +60,7 @@ PhraseDictionaryOnDisk name=DiskTranslationModel{{ loop.index0 }} num-features={
 LexicalReordering name=LexicalReordering{{ loop.index0 }} num-features={{ reorderingTable.numReorderingFeatures }} type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ reorderingTable }}.gz
 {% endfor %}
 {%- for reorderingTable in brick.input.binaryReorderingTables -%}
-LexicalReordering name=BinLexicalReordering{{ loop.index0 }} num-features={{ reorderingTable.numReorderingFeatures }} type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ reorderingTable }}
+LexicalReordering name=BinLexicalReordering{{ loop.index0 }} num-features={{ reorderingTable.numReorderingFeatures }} type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ reorderingTable }}/reordering
 {% endfor %}
 {%- for languageModel in brick.input.languageModels -%}
 KENLM lazyken=0 name=LM{{ loop.index0 }} factor=0 path={{ languageModel }} order={{ languageModel.ngramOrder }}
