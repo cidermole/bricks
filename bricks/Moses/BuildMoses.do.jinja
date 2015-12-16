@@ -9,9 +9,9 @@ redo-always
 {% block Work %}
 
 # run build script
-moses_bin=$({{ brick.BRICKS }}/scripts/build-moses.sh -s {{ brick.srcRepo }} \
+moses_bin=$({{ brick.bricksDir }}/scripts/build-moses.sh -s {{ brick.srcRepo }} \
   -r {{ brick.revision }} -b {{ brick.branch }} -t {{ brick.buildType }} \
-  -a {{ brick.AUTO_BUILD_DIR }} -m "{{ brick.target }}" -g "{{ brick.gccToolset }}")
+  -a {{ brick.autoBuildDir }} -m "{{ brick.target }}" -g "{{ brick.gccToolset }}")
 
 # out of curiosity, fetch the description including revision
 full_name=$(basename $(dirname $(dirname $moses_bin)))
