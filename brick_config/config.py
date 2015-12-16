@@ -737,7 +737,7 @@ class ConfigSearchPath(object):
     def __init__(self, folders):
         self.folders = folders
 
-    def searchFile(self, fileName):
+    def searchGlobalFile(self, fileName):
         """
         Attempts to find fileName in any of our folders, and
         returns the full path name on success.
@@ -747,6 +747,12 @@ class ConfigSearchPath(object):
             if os.path.exists(p):
                 return p
         raise IOError("No such file or directory: '%s' in ConfigSearchPath %s" % (fileName, str(self.folders)))
+
+    def searchRelativeFile(self, fileName, parentFileName):
+        path = os.path.join(os.path.dirname(parentFileName), fileName)
+        if not os.path.exists(path):
+            raise IOError("No such file or directory: '%s' in ConfigSearchPath from parent '%s'" % (fileName, parentFileName))
+        return path
 
 
 class Config(Mapping):
@@ -1713,9 +1719,10 @@ RCURLY, COMMA, found %r"
                     # global brick_config file path
                     fn = fn.replace('<', '"').replace('>', '"')
                     fn = eval(fn)  # evaluate string
-                    fn = self.searchPath.searchFile(fn)
+                    fn = self.searchPath.searchGlobalFile(fn)
                 else:
                     fn = eval(fn)  # evaluate string
+                    fn = self.searchPath.searchRelativeFile(fn, self.filename)
             rv = Config(file(fn), parent, searchPath=self.searchPath)
         return rv
 
