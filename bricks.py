@@ -388,28 +388,46 @@ class TemplateBrick(Brick):
 
 
 class ConfigGenerator(object):
-    def __init__(self, cfgFileName, setupFileName, searchPath, logLevel=logging.ERROR):
+    def __init__(self, cfgFileName, setupFileName=None, logLevel=logging.ERROR):
+        # Logging
         ch = logging.StreamHandler()
         config.logger.addHandler(ch)
         config.logger.setLevel(logLevel)
 
-        appDir = os.path.dirname(os.path.realpath(__file__))
+        # Paths
 
-        configSearchPath = config.ConfigSearchPath([searchPath])
-        cfg = config.Config(file(cfgFileName), searchPath=configSearchPath)
-        setup = config.Config(configSearchPath.searchGlobalFile(setupFileName), parent=cfg, searchPath=configSearchPath)
-        cfg.Setup = setup
-
-        # resolve inheritance
-        cfg = cfg.instantiate()
-
-        self.experiment = cfg.Experiment
-
-        # implicit str $BRICKS: path to bricks program root directory
-        self.experiment.BRICKS = appDir
+        # search path for both global config includes @<Bricks.cfg>
+        # and Jinja templates.
+        try:
+            appDir = os.path.dirname(os.path.realpath(__file__))
+        except NameError:
+            # for interactive Python use
+            sys.stderr.write('warning: cannot resolve appDir, interactive mode in %s\n' % os.getcwd())
+            appDir = os.getcwd()
+        searchPath = os.path.join(appDir, 'bricks')
 
         self.searchPath = searchPath
         self.env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath=searchPath))
+        configSearchPath = config.ConfigSearchPath([searchPath])
+
+        if setupFileName is None:
+            setupFileName = 'Setups/%s.cfg' % os.uname()[1].capitalize()
+        # resolve relative path in bricks program root
+        setupFileName = configSearchPath.searchGlobalFile(setupFileName)
+
+        # Create basic Config (not instantiated, i.e. no inheritance or loops)
+        self.cfg = config.Config(file(cfgFileName), searchPath=configSearchPath)
+        setup = config.Config(setupFileName, parent=self.cfg, searchPath=configSearchPath)
+        # implicit str $BRICKS: path to bricks program root directory
+        setup.BRICKS = appDir
+
+        # implicit Mapping $Setup: Experiment can inherit $Setup for machine-specific config keys
+        self.cfg.Setup = setup
+
+    def instantiate(self):
+        # resolve inheritance
+        self.cfg = self.cfg.instantiate()
+        self.experiment = self.cfg.Experiment
 
     def replaceFileContents(self, fileName, newContents):
         """
@@ -483,8 +501,7 @@ class ConfigGenerator(object):
 
 def parseArguments():
     parser = argparse.ArgumentParser()
-    defaultSetup = 'Setups/%s.cfg' % os.uname()[1].capitalize()
-    parser.add_argument('--setup', help='Setup config file included as $Setup.', default=defaultSetup)
+    parser.add_argument('--setup', help='Setup config file included as $Setup.', default=None)
     parser.add_argument('config', help='Root Experiment config file.', nargs=1)
     return parser.parse_args()
 
@@ -496,13 +513,9 @@ if __name__ == '__main__':
 
     args = parseArguments()
 
-    # search path for both global config includes @<Bricks.cfg>
-    # and Jinja templates.
-    appDir = os.path.dirname(os.path.realpath(__file__))
-    searchPath = os.path.join(appDir, 'bricks')
-
     logLevel = logging.ERROR
-    gen = ConfigGenerator(args.config[0], args.setup, searchPath, logLevel)
+    gen = ConfigGenerator(args.config[0], args.setup, logLevel)
+    gen.instantiate()
     gen.generateBricks(gen.experiment)
 
     # ~/mmt/redo/redo == redo
