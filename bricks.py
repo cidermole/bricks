@@ -7,7 +7,8 @@
 # ----------
 # * Including config files
 #   * relative path: key: @"include.cfg"
-#       (FIXME) currently refers to the working directory. Should be relative from the config file location.
+#       relative to the respective config file, or the working
+#       directory if not itself included.
 #   * absolute path: key: @<Bricks.cfg>
 #       searched for in bricks/ and can be used from anywhere.
 #
@@ -80,12 +81,12 @@
 
 from __future__ import print_function
 
-import re
 from brick_config import config
 import logging
 import os
 import sys
 import jinja2
+import argparse
 
 
 class Brick(config.Mapping):
@@ -387,7 +388,7 @@ class TemplateBrick(Brick):
 
 
 class ConfigGenerator(object):
-    def __init__(self, cfgFileName, searchPath, logLevel=logging.ERROR):
+    def __init__(self, cfgFileName, setupFileName, searchPath, logLevel=logging.ERROR):
         ch = logging.StreamHandler()
         config.logger.addHandler(ch)
         config.logger.setLevel(logLevel)
@@ -395,7 +396,13 @@ class ConfigGenerator(object):
         appDir = os.path.dirname(os.path.realpath(__file__))
 
         configSearchPath = config.ConfigSearchPath([searchPath])
-        cfg = config.Config(file(cfgFileName), searchPath=configSearchPath).instantiate()
+        cfg = config.Config(file(cfgFileName), searchPath=configSearchPath)
+        setup = config.Config(configSearchPath.searchGlobalFile(setupFileName), parent=cfg, searchPath=configSearchPath)
+        cfg.Setup = setup
+
+        # resolve inheritance
+        cfg = cfg.instantiate()
+
         self.experiment = cfg.Experiment
 
         # implicit str $BRICKS: path to bricks program root directory
@@ -474,11 +481,20 @@ class ConfigGenerator(object):
                 self.generateBricks(brick.parts[part])
 
 
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    defaultSetup = 'Setups/%s.cfg' % os.uname()[1].capitalize()
+    parser.add_argument('--setup', help='Setup config file included as $Setup.', default=defaultSetup)
+    parser.add_argument('config', help='Root Experiment config file.', nargs=1)
+    return parser.parse_args()
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.stderr.write('usage: %s <example.cfg>\n' % sys.argv[0])
         sys.stderr.write('generates the experiment in current working directory.\n')
         sys.exit(1)
+
+    args = parseArguments()
 
     # search path for both global config includes @<Bricks.cfg>
     # and Jinja templates.
@@ -486,7 +502,7 @@ if __name__ == '__main__':
     searchPath = os.path.join(appDir, 'bricks')
 
     logLevel = logging.ERROR
-    gen = ConfigGenerator(sys.argv[1], searchPath, logLevel)
+    gen = ConfigGenerator(args.config[0], args.setup, searchPath, logLevel)
     gen.generateBricks(gen.experiment)
 
     # ~/mmt/redo/redo == redo
