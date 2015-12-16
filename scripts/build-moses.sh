@@ -137,7 +137,7 @@ function get_git_revision() {
     git clone $MOSES_CACHED_DIR $TMP/moses.check
     pushd $TMP/moses.check
 
-    git remote remove origin
+    git remote rm origin
     git remote add origin $MOSES_SRC_REPO
     git fetch
     git checkout $MOSES_BRANCH
@@ -206,7 +206,7 @@ pushd $(dirname $MOSES_TARGET_DIR)
 git clone $MOSES_CACHED_DIR $(basename $MOSES_TARGET_DIR)
 pushd $(basename $MOSES_TARGET_DIR)
 
-git remote remove origin
+git remote rm origin
 git remote add origin $MOSES_SRC_REPO
 git fetch >/dev/null 2>&1
 git checkout $MOSES_BRANCH
