@@ -470,7 +470,11 @@ class ConfigGenerator(object):
             template = self.env.get_template('brick.do.jinja')
 
         # Render the Jinja template
-        brickDo = template.render({'brick': TemplateBrick(brick)})
+        try:
+            brickDo = template.render({'brick': TemplateBrick(brick)})
+        except:
+            logging.exception("Error while rendering Brick %s" % brick.path)
+            raise
 
         # create/replace redo file, if necessary
         targetFile = os.path.join(brick.filesystemPath(), 'brick.do')
