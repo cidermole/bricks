@@ -84,6 +84,7 @@ from __future__ import print_function
 from brick_config import config
 import logging
 import os
+import shutil
 import sys
 import jinja2
 import argparse
@@ -404,6 +405,7 @@ class ConfigGenerator(object):
             # for interactive Python use
             sys.stderr.write('warning: cannot resolve appDir, interactive mode in %s\n' % os.getcwd())
             appDir = os.getcwd()
+        self.appDir = appDir
         searchPath = os.path.join(appDir, 'bricks')
 
         self.searchPath = searchPath
@@ -517,6 +519,9 @@ if __name__ == '__main__':
     gen = ConfigGenerator(args.config[0], args.setup, logLevel)
     gen.instantiate()
     gen.generateBricks(gen.experiment)
+
+    # create convenience default.do file
+    shutil.copy(os.path.join(gen.appDir, 'bricks/default.do'), os.getcwd())
 
     # ~/mmt/redo/redo == redo
     sys.stderr.write('Now run the experiment using $ ~/mmt/redo/redo 0/Experiment/brick\n')
