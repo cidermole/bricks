@@ -523,5 +523,4 @@ if __name__ == '__main__':
     # create convenience default.do file
     shutil.copy(os.path.join(gen.appDir, 'bricks/default.do'), os.getcwd())
 
-    # ~/mmt/redo/redo == redo
-    sys.stderr.write('Now run the experiment using $ ~/mmt/redo/redo 0/Experiment/brick\n')
+    sys.stderr.write('Now run the experiment using redo\n')
