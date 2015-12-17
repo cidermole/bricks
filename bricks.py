@@ -132,17 +132,21 @@ class Brick(config.Mapping):
         # absolute path of us
         ourPath = self.path.split('.')
 
+        # TODO: see below comment with this wording: "magicInputBrick() should have gone this route."
+        # TODO: but need to remember parent in resolve2() since this may be a Reference itself, which
+        # TODO: doesn't have a parent.
+
         # resolve relative _ walking upwards
         # (poor man's implementation)
         resPoint = self
-        while refBrickPath[0] == '_':
+        while len(refBrickPath) > 0 and refBrickPath[0] == '_':
             refBrickPath = refBrickPath[1:]
             ourPath = ourPath[:-1]
             resPoint = resPoint.parent
 
         #sys.stderr.write('resolved: %s\n' % '.'.join(ourPath + refBrickPath))
 
-        inputBrick = resPoint.getByPath('.'.join(refBrickPath))
+        inputBrick = resPoint.getByPath('.'.join(refBrickPath))  if len(refBrickPath) > 0 else resPoint
         #sys.stderr.write('%s\n' % str(inputBrick))
 
         return inputBrick
