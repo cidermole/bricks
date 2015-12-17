@@ -315,14 +315,13 @@ class InputWrap(object):
     """
     Wraps a Brick input config for easy access from Jinja templates.
     """
-    def __init__(self, brick, reference, fileStr):
+    def __init__(self, brick, magicInputBrick, fileStr):
         """
         @param reference: config.Reference pointing to output, or str otherwise?
         """
         self.brick = brick
-        self.refOrStr = reference
         self.fileStr = fileStr
-        self.mib = self.brick.magicInputBrick(self.refOrStr)
+        self.mib = magicInputBrick
 
     def __str__(self):
         """
@@ -365,25 +364,35 @@ class TemplateBrick(Brick):
         anyputs = self.data[item]
         for anyput in anyputs.keys():
             val = anyputs.data[anyput]
-            if type(val) is config.Reference:
-                # wrap plain input mapping
-                # rather, put an fsPath() implementation on Reference?
-                anyputMap[anyput] = InputWrap(self, val, os.path.join(item, anyput))
-                # TODO: config.Reference does not necessarily mean this is a mapping to an output. It could be referring to a hardcoded filename.
-            elif type(val) is config.Sequence:
+            resolved = anyputs[anyput]
+            if type(resolved) is config.Sequence:
+                # are we referencing something that is eventually a Sequence?
+                # In this case, our input brick must be the same for all Sequence entries.
+                if type(val) is config.Reference:
+                    magicInput = self.magicInputBrick(val)
+                else:
+                    magicInput = None
+
                 # wrap input list mapping
                 l = []
-                for i in range(len(val)):
-                    if type(val.data[i]) is config.Reference:
+                for i in range(len(resolved)):
+                    if type(resolved.data[i]) is config.Reference:
                         # avoid resolving key in Sequence
-                        l.append(InputWrap(self, val.data[i], os.path.join(item, anyput, str(i))))
+                        mib = magicInput if magicInput is not None else self.magicInputBrick(val.data[i])
+                        l.append(InputWrap(self, mib, os.path.join(item, anyput, str(i))))
                     else:
                         # potentially resolve key
                         l.append(val[i])
                 anyputMap[anyput] = l
+            elif type(val) is config.Reference:
+                # wrap plain input mapping
+                # rather, put an fsPath() implementation on Reference?
+                anyputMap[anyput] = InputWrap(self, self.magicInputBrick(val), os.path.join(item, anyput))
+                # TODO: config.Reference does not necessarily mean this is a mapping to an output. It could be referring to a hardcoded filename.
             else:
                 # resolve other keys if necessary (e.g. hardcoded filenames, pieced together)
-                anyputMap[anyput] = anyputs[anyput]
+                #anyputMap[anyput] = anyputs[anyput]
+                anyputMap[anyput] = resolved
             # bla, bla. the usual input processing. why do I keep repeating it?
             # need recursion for resolving References in a Sequence
 

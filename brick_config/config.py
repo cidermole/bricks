@@ -1214,7 +1214,16 @@ class Reference(object):
                         if type(key) is Reference:
                             # recursive key resolution support (enables us to use references in indices, like configKey: $Part.definition[$i])
                             key = key.resolve2(container, resolveRefs)[0]
-                        rv = rv[key] if resolveRefs else rv.data[key]
+                        #rv = rv[key] if resolveRefs else rv.data[key]
+                        if resolveRefs:
+                            rv = rv[key]
+                        elif type(rv) is Reference:
+                            # did not ask to resolve Reference to Reference...
+                            # this case happens if you ask to resolve2() a Sequence item Reference on a Reference
+                            # e.g. ref: $array[0], array: $other, other: [1,2,3]
+                            rv = None
+                        else:
+                            rv = rv.data[key]
                     parentConfig.resolving.remove(firstkey)
                     break
                 except ConfigResolutionError:
