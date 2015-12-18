@@ -382,7 +382,7 @@ class TemplateBrick(Brick):
                         l.append(InputWrap(self, mib, os.path.join(item, anyput, str(i))))
                     else:
                         # potentially resolve key
-                        l.append(val[i])
+                        l.append(resolved[i])
                 anyputMap[anyput] = l
             elif type(val) is config.Reference:
                 # wrap plain input mapping
