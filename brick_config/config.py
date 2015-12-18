@@ -109,6 +109,7 @@ LPAREN = '('
 LPAREN2 = '(('
 RPAREN = ')'
 DOT = '.'
+PIPE = '|'
 COMMA = ','
 COLON = ':'
 AT = '@'
@@ -1286,6 +1287,29 @@ class Expression(object):
             memo[id(self)] = result
         return result
 
+    def _internalResolveRecursions(self, container):
+        lhs = self.lhs
+        if isinstance(lhs, Reference):
+            self.lhs = lhs.resolveRecursions(container)
+        elif isinstance(lhs, Expression):
+            lhs._internalResolveRecursions(container)
+        rhs = self.rhs
+        if isinstance(rhs, Reference):
+            self.rhs = rhs.resolveRecursions(container)
+        elif isinstance(rhs, Expression):
+            rhs._internalResolveRecursions(container)
+
+    def resolveRecursions(self, container):
+        """
+        Copy this Expression, and resolve its internal Reference recursions to make it
+        use plain References.
+        """
+        # copy
+        result = copy.deepcopy(self)
+        # resolve recursions
+        result._internalResolveRecursions(container)
+        return result
+
     def evaluate(self, container):
         """
         Evaluate this instance in the context of a container.
@@ -1337,7 +1361,7 @@ class ConfigReader(object):
         self.commentchars = '#'
         self.whitespace = ' \t\r\n'
         self.quotes = '\'"<>'
-        self.punct = ':-+*/%,.{}[]()@`$'
+        self.punct = ':-+*/%,.{}[]()@`$|'
         self.digits = '0123456789'
         self.wordchars = '%s' % WORDCHARS # make a copy
         self.identchars = self.wordchars + self.digits
@@ -1558,18 +1582,18 @@ class ConfigReader(object):
         self.token = self.getToken()
         return rv
 
-    def parseMappingBody(self, parent):
+    def parseMappingBody(self, current):
         """
         Parse the internals of a mapping, and add entries to the provided
         L{Mapping}.
 
-        @param parent: The mapping to add entries to.
-        @type parent: A L{Mapping} instance.
+        @param current: The mapping to add entries to.
+        @type current: A L{Mapping} instance.
         """
         while self.token[0] in [WORD, STRING]:
-            self.parseKeyValuePair(parent)
+            self.parseKeyValuePair(current)
 
-    def parseKeyValuePair(self, parent):
+    def parseKeyValuePair(self, parent, allowRbrack=False):
         """
         Parse a key-value pair, and add it to the provided L{Mapping}.
 
@@ -1601,9 +1625,10 @@ class ConfigReader(object):
             raise ConfigFormatError("%s: %s, %r" % (self.location(), e,
                                     self.token[1]))
         tt = self.token[0]
-        if tt not in [EOF, WORD, STRING, RCURLY, COMMA]:
+        allow = [EOF, WORD, STRING, RCURLY, COMMA] + ([RBRACK] if allowRbrack else [])
+        if tt not in allow:
             msg = "%s: expecting one of EOF, WORD, STRING,\
-RCURLY, COMMA, found %r"
+RCURLY, COMMA, [RBRACK] found %r"
             raise ConfigFormatError(msg  % (self.location(), self.token[1]))
         if tt == COMMA:
             self.token = self.getToken()
@@ -1664,42 +1689,78 @@ RCURLY, COMMA, found %r"
                 continue
 
         # parse range syntax, e.g. [1..3] -> [1,2,3]
-        if not self.parseRange(rv, parent, suffix):
+        if self.parseRange(rv, parent, suffix):
+            return rv
+        elif self.parseListComprehension(rv, parent, suffix):
             self.match(RBRACK)
-        return rv
+            return rv
+        else:
+            self.match(RBRACK)
+            return rv
+
+    def parseListComprehension(self, rv, parent, suffix):
+        """
+        Quick hack to add [$elems[$i] | i: [0..1]] style ranges which are expanded to a Sequence [$elems[0], $elems[1]]
+        This only works with References, since there is no straightforward, intuitive way to partially evaluate an Expression
+        @return True if a list comprehension has been found. We should always match an RBRACK afterwards.
+        """
+        # check for list comprehension syntax
+        if not (len(rv.data) == 1 and (type(rv.data[0]) in [Expression, Reference]) and self.token[0] == PIPE):
+            return False
+        listExpression = rv.data[0]
+
+        specification = Mapping(parent)
+        self.match(PIPE)
+
+        # parse the key: [range] specification
+        self.parseKeyValuePair(specification, allowRbrack=True)
+        assert(len(specification.keys()) == 1)
+        key = specification.keys()[0]
+
+        # build the range
+        object.__setattr__(rv, 'data', [])
+        object.__setattr__(rv, 'comments', [])
+        for val in specification[key]:
+            # create context to evaluate the loop key reference $i
+            context = Mapping(parent)
+            context[key] = val
+
+            resolved = listExpression.resolveRecursions(context)
+            rv.append(resolved, '')
+        return True
 
     def parseRange(self, rv, parent, suffix):
         """
         Quick hack to add [1..3] style ranges which are expanded to a Sequence [1,2,3]
         @return True if a range has been found, False if we should match an RBRACK.
         """
-        # parse range syntax, e.g. [1..3] -> [1,2,3]
-        if len(rv.data) == 1 and (type(rv.data[0]) in [int, float]) and self.token[0] == DOT:
-            # why are literal ints parsed into float?
-            begin = int(rv.data[0])
-            #self.match(DOT)
-            if self.token[0] != DOT:
-                raise ConfigFormatError("%s: expecting dots inside range" % (self.location()))
-            self.token = (LBRACK, LBRACK) # fake begin range
-            # parse the range end (for now, as Sequence...)
-            end = self.parseSequence(parent, suffix)
-            if len(end.data) != 1:
-                raise ConfigFormatError("%s: expecting single number for end of range" % (self.location()))
-            if type(end.data[0]) is Expression:
-                end = end.data[0].evaluate(parent)
-            elif type(end.data[0]) is Reference:
-                end = end.data[0].resolve(parent)
-            else:
-                end = int(end.data[0])
-
-            # build the range
-            object.__setattr__(rv, 'data', [])
-            object.__setattr__(rv, 'comments', [])
-            for i in range(begin, end + 1):
-                rv.append(i, '')
-            return True
-        else:
+        # check for range syntax, e.g. [1..3] -> [1,2,3]
+        if not (len(rv.data) == 1 and (type(rv.data[0]) in [int, float]) and self.token[0] == DOT):
             return False
+
+        # why are literal ints parsed into float?
+        begin = int(rv.data[0])
+        self.token = (LBRACK, LBRACK) # fake begin range
+        # parse the range end (for now, as Sequence...)
+        end = self.parseSequence(parent, suffix)
+        if len(end.data) != 1:
+            raise ConfigFormatError("%s: expecting single number for end of range" % (self.location()))
+
+        # The range end may be an Expression or Reference. To resolve them at parsing time,
+        # it is necessary that those already be defined (and resolvable) *before* the range itself.
+        if type(end.data[0]) is Expression:
+            end = end.data[0].evaluate(parent)
+        elif type(end.data[0]) is Reference:
+            end = end.data[0].resolve(parent)
+        else:
+            end = int(end.data[0])
+
+        # build the range
+        object.__setattr__(rv, 'data', [])
+        object.__setattr__(rv, 'comments', [])
+        for i in range(begin, end + 1):
+            rv.append(i, '')
+        return True
 
     def parseMapping(self, parent, suffix):
         """
