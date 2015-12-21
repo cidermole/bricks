@@ -251,16 +251,17 @@ class Brick(config.Mapping):
         Recursively walk inputs/outputs and create symlinks in the filesystem.
         """
         inoutMapping = {'input': self.input, 'output': self.output}[inout]
+        resultList = []
         linkSource = None
 
         if type(anyput) is config.Mapping:
             # walk this Brick's *puts without resolving config keys
             for (k, aput) in anyput.data.iteritems():
-                self.linkPaths(inout, anyput, aput, k, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, k))
+                resultList += self.linkPaths(inout, anyput, aput, k, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, k))
         elif type(anyput) is config.Sequence:
             for (i, aput) in enumerate(anyput.data):
                 # anyput??
-                self.linkPaths(inout, anyput, aput, i, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, str(i)))
+                resultList += self.linkPaths(inout, anyput, aput, i, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, str(i)))
         elif type(anyput) is config.Reference:
             # referencing another Brick
             linkSource = self.referenceDependencyPath(anyput, inoutMapping, brickOnly=False)
@@ -286,6 +287,12 @@ class Brick(config.Mapping):
             linkSource = os.path.join(linkSourcePref, linkSource)
             #sys.stderr.write("%s -> %s\n" % (linkSource, linkTarget))
 
+            resultList.append((linkSource, linkTarget))
+
+        return resultList
+
+    def fsCreateSymlinks(self, links):
+        for linkSource, linkTarget in links:
             # mkdir -p $(dirname linkTarget)
             if not os.path.exists(os.path.dirname(linkTarget)):
                 os.makedirs(os.path.dirname(linkTarget))
@@ -294,7 +301,7 @@ class Brick(config.Mapping):
                 os.unlink(linkTarget)
             os.symlink(linkSource, linkTarget)
 
-    def createSymlinks(self, inout):
+    def inoutSymlinks(self, inout):
         """
         Create symlinks for all inputs/outputs.
         @param inout either 'input' or 'output'
@@ -307,7 +314,13 @@ class Brick(config.Mapping):
         if not os.path.exists(os.path.join(fsPath, inout)):
             os.makedirs(os.path.join(fsPath, inout))
 
-        self.linkPaths(inout, self, inoutMapping, inout, '', os.path.join(fsPath, inout))
+        return self.linkPaths(inout, self, inoutMapping, inout, '', os.path.join(fsPath, inout))
+
+    def symlinks(self):
+        sym = []
+        sym += self.symlinks('input')
+        sym += self.symlinks('output')
+        return sym
 
 
 # can we create this while copying the config tree for inheritance?
@@ -509,8 +522,7 @@ class ConfigGenerator(object):
         #if len(brick.outputDependencies()) > 0:
         #    sys.stderr.write('  output %s\n' % str(brick.outputDependencies()))
 
-        brick.createSymlinks('input')
-        brick.createSymlinks('output')
+        self.fsCreateSymlinks(brick.symlinks())
         self.generateRedoFile(brick)
 
         if 'parts' in brick:
