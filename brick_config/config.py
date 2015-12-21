@@ -1034,7 +1034,7 @@ class Reference(object):
     """
     This internal class implements a value which is a reference to another value.
     """
-    def __init__(self, type, ident, parent=None):
+    def __init__(self, type, ident):
         """
         Initialize an instance.
 
@@ -1042,15 +1042,12 @@ class Reference(object):
         @type type: BACKTICK or DOLLAR
         @param ident: The identifier which starts the reference.
         @type ident: str
-        @param parent: The parent of this instance in the hierarchy. (This is the parent we are attached to.)
-        @type parent: A L{Container} instance.
         """
         self.type = type
         self.elements = [ident]
-        object.__setattr__(self, 'parent', parent)
 
     def __deepcopy__(self, memo=None):
-        result = Reference(self.type, self.elements[0], self.parent)
+        result = Reference(self.type, self.elements[0])
         if memo is not None:
             memo[id(self)] = result
         result.elements = copy.deepcopy(self.elements, memo)
@@ -1062,7 +1059,7 @@ class Reference(object):
         a plain Reference.
         """
         # copy
-        result = Reference(self.type, self.elements[0], self.parent)
+        result = Reference(self.type, self.elements[0])
         elements = copy.deepcopy(self.elements)
         # resolve recursions
         newElements = elements[0:1]
@@ -1651,7 +1648,7 @@ RCURLY, COMMA, [RBRACK] found %r"
         tt = self.token[0]
         if tt in [STRING, WORD, NUMBER, LPAREN, DOLLAR,
                   TRUE, FALSE, NONE, BACKTICK, MINUS]:
-            rv = self.parseScalar(parent)
+            rv = self.parseScalar()
         elif tt == LBRACK:
             rv = self.parseSequence(parent, suffix)
         elif tt in [LCURLY, AT]:
@@ -1799,51 +1796,45 @@ RCURLY, COMMA, [RBRACK] found %r"
             rv = Config(file(fn), parent, searchPath=self.searchPath)
         return rv
 
-    def parseScalar(self, parent=None):
+    def parseScalar(self):
         """
         Parse a scalar - a terminal value such as a string or number, or
         an L{Expression} or L{Reference}.
 
-        @param parent: The parent of this instance in the hierarchy.
-        @type parent: A L{Container} instance.
         @return: the parsed scalar
         @rtype: any scalar
         @raise ConfigFormatError: if a syntax error is found.
         """
-        lhs = self.parseTerm(parent)
+        lhs = self.parseTerm()
         tt = self.token[0]
         while tt in [PLUS, MINUS]:
             self.match(tt)
-            rhs = self.parseTerm(parent)
+            rhs = self.parseTerm()
             lhs = Expression(tt, lhs, rhs)
             tt = self.token[0]
         return lhs
 
-    def parseTerm(self, parent=None):
+    def parseTerm(self):
         """
         Parse a term in an additive expression (a + b, a - b)
 
-        @param parent: The parent of this instance in the hierarchy.
-        @type parent: A L{Container} instance.
         @return: the parsed term
         @rtype: any scalar
         @raise ConfigFormatError: if a syntax error is found.
         """
-        lhs = self.parseFactor(parent)
+        lhs = self.parseFactor()
         tt = self.token[0]
         while tt in [STAR, SLASH, MOD]:
             self.match(tt)
-            rhs = self.parseFactor(parent)
+            rhs = self.parseFactor()
             lhs = Expression(tt, lhs, rhs)
             tt = self.token[0]
         return lhs
 
-    def parseFactor(self, parent=None):
+    def parseFactor(self):
         """
         Parse a factor in an multiplicative expression (a * b, a / b, a % b)
 
-        @param parent: The parent of this instance in the hierarchy.
-        @type parent: A L{Container} instance.
         @return: the parsed factor
         @rtype: any scalar
         @raise ConfigFormatError: if a syntax error is found.
@@ -1856,40 +1847,38 @@ RCURLY, COMMA, [RBRACK] found %r"
             self.match(tt)
         elif tt == LPAREN:
             self.match(LPAREN)
-            rv = self.parseScalar(parent)
+            rv = self.parseScalar()
             self.match(RPAREN)
         elif tt == DOLLAR:
             self.match(DOLLAR)
-            rv = self.parseReference(DOLLAR, parent)
+            rv = self.parseReference(DOLLAR)
         elif tt == BACKTICK:
             self.match(BACKTICK)
-            rv = self.parseReference(BACKTICK, parent)
+            rv = self.parseReference(BACKTICK)
             self.match(BACKTICK)
         elif tt == MINUS:
             self.match(MINUS)
-            rv = -self.parseScalar(parent)
+            rv = -self.parseScalar()
         else:
             raise ConfigFormatError("%s: unexpected input: %r" %
                (self.location(), self.token[1]))
         return rv
 
-    def parseReference(self, type, parent=None):
+    def parseReference(self, type):
         """
         Parse a reference.
 
-        @param parent: The parent of this instance in the hierarchy.
-        @type parent: A L{Container} instance.
         @return: the parsed reference
         @rtype: L{Reference}
         @raise ConfigFormatError: if a syntax error is found.
         """
         word = self.match(WORD)
-        rv = Reference(type, word[1], parent)
+        rv = Reference(type, word[1])
         while self.token[0] in [DOT, LBRACK2]:
-            self.parseSuffix(rv, parent)
+            self.parseSuffix(rv)
         return rv
 
-    def parseSuffix(self, ref, parent=None):
+    def parseSuffix(self, ref):
         """
         Parse a reference suffix.
 
@@ -1909,7 +1898,7 @@ RCURLY, COMMA, [RBRACK] found %r"
                 raise ConfigFormatError("%s: expected number or string, found %r" % (self.location(), tv))
             if tt == DOLLAR:
                 self.token = self.getToken()
-                rv = self.parseReference(DOLLAR, parent)
+                rv = self.parseReference(DOLLAR)
                 self.match(RBRACK)
                 ref.addElement(DOLLAR, rv)
             else:
