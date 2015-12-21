@@ -1045,11 +1045,13 @@ class Reference(object):
         """
         self.type = type
         self.elements = [ident]
+        object.__setattr__(self, 'path', '')
 
     def __deepcopy__(self, memo=None):
         result = Reference(self.type, self.elements[0])
         if memo is not None:
             memo[id(self)] = result
+        object.__setattr__(result, 'path', self.path)
         result.elements = copy.deepcopy(self.elements, memo)
         return result
 
@@ -1060,6 +1062,7 @@ class Reference(object):
         """
         # copy
         result = Reference(self.type, self.elements[0])
+        object.__setattr__(result, 'path', self.path)
         elements = copy.deepcopy(self.elements)
         # resolve recursions
         newElements = elements[0:1]
@@ -1274,6 +1277,7 @@ class Expression(object):
         self.op = op
         self.lhs = lhs
         self.rhs = rhs
+        object.__setattr__(self, 'path', '')
 
     def __str__(self):
         return '%r %s %r' % (self.lhs, self.op, self.rhs)
@@ -1283,6 +1287,7 @@ class Expression(object):
 
     def __deepcopy__(self, memo=None):
         result = Expression(self.op, copy.deepcopy(self.lhs), copy.deepcopy(self.rhs))
+        object.__setattr__(result, 'path', self.path)
         if memo is not None:
             memo[id(self)] = result
         return result
@@ -1649,6 +1654,7 @@ RCURLY, COMMA, [RBRACK] found %r"
         if tt in [STRING, WORD, NUMBER, LPAREN, DOLLAR,
                   TRUE, FALSE, NONE, BACKTICK, MINUS]:
             rv = self.parseScalar()
+            object.__setattr__(rv, 'path', makePath(object.__getattribute__(parent, 'path'), suffix))
         elif tt == LBRACK:
             rv = self.parseSequence(parent, suffix)
         elif tt in [LCURLY, AT]:
