@@ -554,6 +554,7 @@ class Mapping(Container):
         object.__setattr__(self, 'data', {})
         object.__setattr__(self, 'order', [])   # to preserve ordering
         object.__setattr__(self, 'comments', {})
+        object.__setattr__(self, 'resolving', set())
 
     def __delitem__(self, key):
         """
@@ -1045,7 +1046,7 @@ class Reference(object):
         """
         self.type = type
         self.elements = [ident]
-        object.__setattr__(self, 'path', '')
+        object.__setattr__(self, 'path', '')  # TODO: path vs. path() name clash
 
     def __deepcopy__(self, memo=None):
         result = Reference(self.type, self.elements[0])
@@ -1096,7 +1097,9 @@ class Reference(object):
         @return: The closest enclosing configuration, or None.
         @rtype: L{Config}
         """
-        while (container is not None) and not isinstance(container, Config):
+        # find parent *Brick* instead of parent Config
+        # TODO: inheritance. this is not a very nice way of testing for a Brick...
+        while (container is not None) and not (isinstance(container, Mapping) and (('input' in container and 'output' in container) or 'extends' in container)):
             container = object.__getattribute__(container, 'parent')
         return container
 
@@ -1108,6 +1111,7 @@ class Reference(object):
         return (DOLLAR in zip(*self.elements[1:])[0])
 
     def resolve(self, container):
+        logger.debug("resolve() of reference object = %s -> %s in container = %s", str(self.path), str(self.elements2path(self.elements)), str(container.path))
         return self.resolve2(container)[0]
 
     def relativeElements(self, container):
@@ -1200,6 +1204,10 @@ class Reference(object):
                     break
             else:
                 firstkey = elements[0]
+                try:
+                    parentConfig.resolving
+                except AttributeError:
+                    self.findConfig(container)
                 if firstkey in parentConfig.resolving:
                     parentConfig.resolving.remove(firstkey)
                     raise ConfigResolutionError("Circular reference: %r" % firstkey)
@@ -1654,7 +1662,8 @@ RCURLY, COMMA, [RBRACK] found %r"
         if tt in [STRING, WORD, NUMBER, LPAREN, DOLLAR,
                   TRUE, FALSE, NONE, BACKTICK, MINUS]:
             rv = self.parseScalar()
-            object.__setattr__(rv, 'path', makePath(object.__getattribute__(parent, 'path'), suffix))
+            if type(rv) in [Reference, Expression]:
+                object.__setattr__(rv, 'path', makePath(object.__getattribute__(parent, 'path'), suffix))
         elif tt == LBRACK:
             rv = self.parseSequence(parent, suffix)
         elif tt in [LCURLY, AT]:
@@ -1711,7 +1720,8 @@ RCURLY, COMMA, [RBRACK] found %r"
         @return True if a list comprehension has been found. We should always match an RBRACK afterwards.
         """
         # check for list comprehension syntax
-        if not (len(rv.data) == 1 and (type(rv.data[0]) in [Expression, Reference]) and self.token[0] == PIPE):
+        #  and (type(rv.data[0]) in [Expression, Reference])
+        if not (len(rv.data) == 1 and self.token[0] == PIPE):
             return False
         listExpression = rv.data[0]
 
@@ -1731,7 +1741,10 @@ RCURLY, COMMA, [RBRACK] found %r"
             context = Mapping(parent)
             context[key] = val
 
-            resolved = listExpression.resolveRecursions(context)
+            if type(listExpression) in [Expression, Reference]:
+                resolved = listExpression.resolveRecursions(context)
+            else:
+                resolved = listExpression
             rv.append(resolved, '')
         return True
 

@@ -100,6 +100,7 @@ class Brick(config.Mapping):
         object.__setattr__(self, 'data', mapping.data)
         object.__setattr__(self, 'order', mapping.order)
         object.__setattr__(self, 'comments', mapping.comments)
+        object.__setattr__(self, 'resolving', set())
 
         # rudimentarily assert that this config level is indeed a Brick
         assert('input' in self.data and 'output' in self.data)
@@ -318,8 +319,8 @@ class Brick(config.Mapping):
 
     def symlinks(self):
         sym = []
-        sym += self.symlinks('input')
-        sym += self.symlinks('output')
+        sym += self.inoutSymlinks('input')
+        sym += self.inoutSymlinks('output')
         return sym
 
 
@@ -522,7 +523,7 @@ class ConfigGenerator(object):
         #if len(brick.outputDependencies()) > 0:
         #    sys.stderr.write('  output %s\n' % str(brick.outputDependencies()))
 
-        self.fsCreateSymlinks(brick.symlinks())
+        brick.fsCreateSymlinks(brick.symlinks())
         self.generateRedoFile(brick)
 
         if 'parts' in brick:
@@ -544,7 +545,7 @@ if __name__ == '__main__':
 
     args = parseArguments()
 
-    logLevel = logging.ERROR
+    logLevel = logging.DEBUG
     gen = ConfigGenerator(args.config[0], args.setup, logLevel)
     gen.instantiate()
     gen.generateBricks(gen.experiment)
