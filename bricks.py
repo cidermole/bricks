@@ -312,6 +312,7 @@ class Brick(config.Mapping):
 
         fsPath = self.filesystemPath()
 
+        # TODO: old stuff, remove.
         # ensure each Brick has an input/output directory
         if not os.path.exists(os.path.join(fsPath, inout)):
             os.makedirs(os.path.join(fsPath, inout))
@@ -524,6 +525,7 @@ class ConfigGenerator(object):
         #if len(brick.outputDependencies()) > 0:
         #    sys.stderr.write('  output %s\n' % str(brick.outputDependencies()))
 
+        # TODO: move to self
         brick.fsCreateSymlinks(brick.symlinks())
         self.generateRedoFile(brick)
 
