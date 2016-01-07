@@ -206,8 +206,9 @@ class Brick(config.Mapping):
                 return os.path.join(*(['..'] + relativePath[3:]))
 
         # ['_', 'parts', 'WordAligner0', 'output', 'alignment']
+        # ['_', 'parts', 'Split0', 'output', 'texts', '0']
         # used for output dependencies
-        if len(relativePath) == 5 and relativePath[0:2] == ['_', 'parts'] \
+        if len(relativePath) in [5, 6] and relativePath[0:2] == ['_', 'parts'] \
                 and relativePath[3] == 'output':
             if brickOnly:
                 return os.path.join(relativePath[2], 'brick')
