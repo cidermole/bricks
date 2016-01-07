@@ -545,7 +545,7 @@ if __name__ == '__main__':
 
     args = parseArguments()
 
-    logLevel = logging.DEBUG
+    logLevel = logging.ERROR
     gen = ConfigGenerator(args.config[0], args.setup, logLevel)
     gen.instantiate()
     gen.generateBricks(gen.experiment)
