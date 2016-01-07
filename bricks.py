@@ -176,12 +176,12 @@ class Brick(config.Mapping):
 
         # ['_', '_', 'Giza12', 'output', 'alignment']
         # used for input dependencies
-        if len(relativePath) == 5 and relativePath[0:2] == ['_', '_'] \
+        if len(relativePath) in [5, 6] and relativePath[0:2] == ['_', '_'] \
                 and relativePath[2] != '_' and relativePath[3] == 'output':
             if brickOnly:
                 return os.path.join('..', relativePath[2], 'brick')
             else:
-                return os.path.join(*(['..'] + relativePath[2:5]))
+                return os.path.join(*(['..'] + relativePath[2:]))
 
         # ['_', '_', '_', 'input', 'src']
         # ['_', '_', '_', 'input', 'corpora', '0'] - for referencing input lists
