@@ -299,7 +299,7 @@ class Brick(config.Mapping):
             if not os.path.exists(os.path.dirname(linkTarget)):
                 os.makedirs(os.path.dirname(linkTarget))
             # ln -sf linkSource linkTarget
-            if os.path.islink(linkTarget):
+            if os.path.islink(linkTarget) or os.path.isfile(linkTarget):
                 os.unlink(linkTarget)
             os.symlink(linkSource, linkTarget)
 
