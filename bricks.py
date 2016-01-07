@@ -177,7 +177,7 @@ class Brick(config.Mapping):
         # ['_', '_', 'Giza12', 'output', 'alignment']
         # used for input dependencies
         if len(relativePath) == 5 and relativePath[0:2] == ['_', '_'] \
-                and relativePath[3] != '_' and relativePath[3] == 'output':
+                and relativePath[2] != '_' and relativePath[3] == 'output':
             if brickOnly:
                 return os.path.join('..', relativePath[2], 'brick')
             else:
