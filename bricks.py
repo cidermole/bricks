@@ -214,7 +214,7 @@ class Brick(config.Mapping):
             if brickOnly:
                 return os.path.join(relativePath[2], 'brick')
             else:
-                return os.path.join(*relativePath[2:5])
+                return os.path.join(*relativePath[2:])
 
         return None
 
