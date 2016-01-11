@@ -12,6 +12,9 @@
 
 {{ brick.MOSES }}/scripts/training/train-model.perl \
 {% block AddTrainingOptions %}{% endblock %}
+{%- if brick.finalAlignmentModel is number %}
+    --final-alignment-model={{ brick.finalAlignmentModel }} \
+{%- endif %}
     -external-bin-dir "{{ brick.EXTERNAL_BIN_DIR }}" \
     -mgiza -mgiza-cpus {{ brick.gizaCpus }} -parallel \
     -f {{ brick.sourceLang }} -e {{ brick.targetLang }}
