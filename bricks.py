@@ -95,6 +95,7 @@ class Brick(config.Mapping):
     Wrapper around config.Mapping with various utility functions for Bricks.
     """
     def __init__(self, mapping):
+        assert(isinstance(mapping, config.Mapping))
         config.Container.__init__(self, mapping.parent)
         object.__setattr__(self, 'path', mapping.path)
         object.__setattr__(self, 'data', mapping.data)
