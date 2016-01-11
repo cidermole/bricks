@@ -176,7 +176,7 @@ class Brick(config.Mapping):
         # currently we only support dependencies of the form ...:
 
         # ['_', '_', 'Giza12', 'output', 'alignment']
-        # used for input dependencies (of subordinate bricks)
+        # used for input dependencies (of siblings)
         if len(relativePath) in [5, 6] and relativePath[0:2] == ['_', '_'] \
                 and relativePath[2] != '_' and relativePath[3] == 'output':
             if brickOnly:
