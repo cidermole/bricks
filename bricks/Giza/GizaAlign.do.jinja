@@ -16,6 +16,9 @@ mkdir -p $GIZA_DIR
 {% block AddTrainingOptions -%} \
     -do-steps 2 \
     -corpus-dir $(pwd)/input/preparedCorpusDir \
+{%- if brick.finalAlignmentModel is number %}
+    --final-alignment-model={{ brick.finalAlignmentModel }} \
+{%- endif -%}
 {%- if brick.direction == 2 %}
     -giza-e2f $GIZA_DIR -direction 2 \
 {%- else %}
