@@ -177,7 +177,6 @@ class Brick(config.Mapping):
 
         # ['_', '_', 'Giza12', 'output', 'alignment']
         # used for input dependencies (of subordinate bricks)
-        # TODO: input dependencies of same-depth bricks!!! (not handled anywhere. BUG.)
         if len(relativePath) in [5, 6] and relativePath[0:2] == ['_', '_'] \
                 and relativePath[2] != '_' and relativePath[3] == 'output':
             if brickOnly:
@@ -248,7 +247,7 @@ class Brick(config.Mapping):
                             if path is not None:
                                 dependencies.add(path)
 
-        return dependencies
+        return list(sorted(list(dependencies)))
 
     def linkPaths(self, inout, apParent, anyput, key, linkSourcePref, linkTarget):
         """
