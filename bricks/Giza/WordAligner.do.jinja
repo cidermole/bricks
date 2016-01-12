@@ -22,14 +22,14 @@
 
 # now check input corpus hashes to see if this corpus has been aligned before
 
-srcHash=$(sha1sum input/src)
-trgHash=$(sha1sum input/trg)
+srcHash=$(sha1sum input/src | awk '{print $1}')
+trgHash=$(sha1sum input/trg | awk '{print $1}')
 hash=${srcHash}_${trgHash}
 cachedAlignment="{{ brick.cacheDir }}/$hash"
 
 # have cached version?
 if [ -e "$cachedAlignment" ]; then
-  cp "$cachedAlignment" output/alignment
+  zcat "$cachedAlignment" output/alignment
   exit 0
 fi
 
@@ -55,7 +55,7 @@ fi
 
 # cache the resulting alignment
 if [ -d "{{ brick.cacheDir }}" ]; then
-  cp output/alignment "$cachedAlignment"
+  gzip -c output/alignment > "$cachedAlignment"
 fi
 
 {% endblock %}
