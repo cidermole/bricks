@@ -28,7 +28,7 @@ echo $pid | tee $WDIR/redo.pid > $ODIR/redo.pid
 
 # process group id (can use kill -TERM -pgid # with negative pgid)
 pgid=$(sed -n '$s/.*) [^ ]* [^ ]* \([^ ]*\).*/\1/p' < /proc/$pid/stat)
-echo \$pgid | tee $WDIR/redo.pgid > $ODIR/redo.pgid
+echo $pgid | tee $WDIR/redo.pgid > $ODIR/redo.pgid
 
 # wait for Experiment to actually finish.
 wait $pid
