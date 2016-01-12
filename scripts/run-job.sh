@@ -36,7 +36,7 @@ wait $pid
 popd >/dev/null  # $WDIR
 
 cd ..
-# backup old link structure
+# keep old link structure in case we crash during copy
 mv "$experiment" "${experiment}.bak"
 # copy back results
 cp -r --preserve=links $WDIR $ODIR || exit 1
