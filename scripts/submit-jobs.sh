@@ -5,9 +5,9 @@ shift
 
 pushd ~/mmt/run-bricks/mmt >/dev/null
 dir=$(date "+%Y-%m-%d_%H-%M-%S")
-echo $dir
+#echo $dir
 mkdir $dir || exit 1
-pushd $dir >/dev/null
+pushd $dir
 
 . /fs/lofn0/dmadl/mmt/run-bricks/env.sh
 
