@@ -49,7 +49,7 @@ for host in $HOSTS; do
     echo \$pid > redo.pid
 
     # process group id (can use kill -TERM -pgid # with negative pgid)
-    pgid=\$(sed -n '$s/.*) [^ ]* [^ ]* \([^ ]*\).*/\1/p' < /proc/\$pid/stat)
+    pgid=\$(sed -n '$s/.*) [^ ]* [^ ]* \\([^ ]*\\).*/\\1/p' < /proc/\$pid/stat)
     echo \$pgid > redo.pgid
   "
 done
