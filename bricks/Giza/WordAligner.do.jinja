@@ -30,8 +30,7 @@ cachedAlignment="{{ brick.cacheDir }}/$hash"
 # have cached version?
 if [ -e "$cachedAlignment" ]; then
   zcat "$cachedAlignment" > output/alignment
-  exit 0
-fi
+else
 
 
 # handle output dependencies (create the alignment)
@@ -48,13 +47,15 @@ fi
 {% endif %}
 ) | xargs redo-ifchange
 
+fi
+
 {% endblock %}
 
 
 {% block Work %}
 
-# cache the resulting alignment
-if [ -d "{{ brick.cacheDir }}" ]; then
+# cache the resulting alignment (if not yet cached)
+if [ -d "{{ brick.cacheDir }}" -a ! -e "$cachedAlignment" ]; then
   gzip -c output/alignment > "$cachedAlignment.tmp"
   # avoid races where the file is still being created
   mv "$cachedAlignment.tmp" "$cachedAlignment"
