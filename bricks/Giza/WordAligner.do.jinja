@@ -27,11 +27,8 @@ trgHash=$(sha1sum input/trg | awk '{print $1}')
 hash=${srcHash}_${trgHash}
 cachedAlignment="{{ brick.cacheDir }}/$hash"
 
-# have cached version?
-if [ -e "$cachedAlignment" ]; then
-  zcat "$cachedAlignment" > output/alignment
-else
-
+# do not have cached version? run parts.
+if [ ! -e "$cachedAlignment" ]; then
 
 # handle output dependencies (create the alignment)
 
@@ -54,11 +51,17 @@ fi
 
 {% block Work %}
 
-# cache the resulting alignment (if not yet cached)
-if [ -d "{{ brick.cacheDir }}" -a ! -e "$cachedAlignment" ]; then
-  gzip -c output/alignment > "$cachedAlignment.tmp"
-  # avoid races where the file is still being created
-  mv "$cachedAlignment.tmp" "$cachedAlignment"
+if [ -e "$cachedAlignment" ]; then
+  echo "Using precomputed cached word alignment, hash $hash."
+  echo "NOTE: hash does not currently include GIZA options."
+  zcat "$cachedAlignment" > output/alignment
+else
+  # cache the resulting alignment (if not yet cached)
+  if [ -d "{{ brick.cacheDir }}" ]; then
+    gzip -c output/alignment > "$cachedAlignment.tmp"
+    # avoid races where the file is still being created
+    mv "$cachedAlignment.tmp" "$cachedAlignment"
+  fi
 fi
 
 {% endblock %}
