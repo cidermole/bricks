@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SCRIPT_DIR=$(dirname $(readlink -f "$0"))
+
 HOSTS="$1"
 shift
 
@@ -43,14 +45,8 @@ for host in $HOSTS; do
   # submit job to host
   ssh $host "
     . /fs/lofn0/dmadl/mmt/run-bricks/env.sh
-    cd ~/mmt/run-bricks/mmt/$dir/$experiment
-    nice nohup redo >> nohup.out 2>&1 &
-    pid=\$!
-    echo \$pid > redo.pid
-
-    # process group id (can use kill -TERM -pgid # with negative pgid)
-    pgid=\$(sed -n '$s/.*) [^ ]* [^ ]* \\([^ ]*\\).*/\\1/p' < /proc/\$pid/stat)
-    echo \$pgid > redo.pgid
+    cd /fs/lofn0/dmadl/mmt/run-bricks/mmt/$dir/$experiment
+    nice nohup $SCRIPT_DIR/run-job.sh $dir $experiment >> nohup.out 2>&1 &
   "
 done
 
