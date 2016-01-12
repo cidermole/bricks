@@ -29,7 +29,7 @@ cachedAlignment="{{ brick.cacheDir }}/$hash"
 
 # have cached version?
 if [ -e "$cachedAlignment" ]; then
-  zcat "$cachedAlignment" output/alignment
+  zcat "$cachedAlignment" > output/alignment
   exit 0
 fi
 
