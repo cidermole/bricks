@@ -1,0 +1,65 @@
+{#
+ # Decides whether to provide cached alignment or to actually compute it using our parts.
+ #}
+{% extends "brick.do.jinja" %}
+
+{% block OverrideDependencies %}
+
+# handle input dependencies (make sure inputs exist)
+
+(
+{% block Dependencies %}
+    # dependencies (input only)
+    {%- for dependency in brick.dependencies('input') %}
+        echo {{ dependency }}
+    {%- endfor %}
+{%- endblock %}
+
+{% if brick.dependencies('input') | length == 0 %}
+    # we have no dependencies
+    true
+{% endif %}
+) | xargs redo-ifchange
+
+
+# now check input corpus hashes to see if this corpus has been aligned before
+
+srcHash=$(sha1sum input/src)
+trgHash=$(sha1sum input/trg)
+hash=${srcHash}_${trgHash}
+cachedAlignment="{{ brick.cacheDir }}/$hash"
+
+# have cached version?
+if [ -e "$cachedAlignment" ]; then
+  cp "$cachedAlignment" output/alignment
+  exit 0
+fi
+
+
+# handle output dependencies (create the alignment)
+
+(
+{% block Dependencies %}
+    # dependencies (input only)
+    {%- for dependency in brick.dependencies('output') %}
+        echo {{ dependency }}
+    {%- endfor %}
+{%- endblock %}
+
+{% if brick.dependencies('output') | length == 0 %}
+    # we have no dependencies
+    true
+{% endif %}
+) | xargs redo-ifchange
+
+{% endblock %}
+
+
+{% block Work %}
+
+# cache the resulting alignment
+if [ -d "{{ brick.cacheDir }}" ]; then
+  cp output/alignment "$cachedAlignment"
+fi
+
+{% endblock %}
