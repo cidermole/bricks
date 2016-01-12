@@ -8,12 +8,10 @@
 # handle input dependencies (make sure inputs exist)
 
 (
-{% block Dependencies %}
     # dependencies (input only)
     {%- for dependency in brick.dependencies('input') %}
         echo {{ dependency }}
     {%- endfor %}
-{%- endblock %}
 
 {% if brick.dependencies('input') | length == 0 %}
     # we have no dependencies
@@ -39,12 +37,10 @@ fi
 # handle output dependencies (create the alignment)
 
 (
-{% block Dependencies %}
     # dependencies (input only)
     {%- for dependency in brick.dependencies('output') %}
         echo {{ dependency }}
     {%- endfor %}
-{%- endblock %}
 
 {% if brick.dependencies('output') | length == 0 %}
     # we have no dependencies

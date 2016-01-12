@@ -218,7 +218,7 @@ class Brick(config.Mapping):
 
         return None
 
-    def dependencies(self, type=None):
+    def dependencies(self, depType=None):
         """
         Get all Bricks which we depend on, as a list of relative
         file paths for the runner system 'redo'.
@@ -228,7 +228,7 @@ class Brick(config.Mapping):
         """
         dependencies = set()
 
-        types = ['input', 'output'] if type is None else [type]
+        types = ['input', 'output'] if depType is None else [depType]
 
         for inout in types:
             mapping = self[inout]
