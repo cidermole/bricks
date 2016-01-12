@@ -45,7 +45,12 @@ for host in $HOSTS; do
     . /fs/lofn0/dmadl/mmt/run-bricks/env.sh
     cd ~/mmt/run-bricks/mmt/$dir/$experiment
     nice nohup redo >> nohup.out 2>&1 &
-    echo \$! > redo.pid
+    pid=\$!
+    echo \$pid > redo.pid
+
+    # process group id (can use kill -TERM -pgid # with negative pgid)
+    pgid=\$(sed -n '$s/.*) [^ ]* [^ ]* \([^ ]*\).*/\1/p' < /proc/\$pid/stat)
+    echo \$pgid > redo.pgid
   "
 done
 
