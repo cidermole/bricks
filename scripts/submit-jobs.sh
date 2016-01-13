@@ -6,7 +6,11 @@ HOSTS="$1"
 shift
 
 BRICKS_DIR=/home/dmadl/run-bricks/mmt
+ABS_BRICKS_DIR=/fs/lofn0/dmadl/mmt/run-bricks/mmt
 CONF_DIR=/fs/lofn0/dmadl/mmt/bricks/examples/mmt
+
+# symlinked:
+# ln -s /fs/lofn0/dmadl/mmt/run-bricks /home/dmadl/run-bricks
 
 pushd $BRICKS_DIR >/dev/null
 dir=$(date "+%Y-%m-%d_%H-%M-%S")
@@ -48,7 +52,7 @@ for host in $HOSTS; do
   # submit job to host
   ssh $host "
     . /fs/lofn0/dmadl/mmt/run-bricks/env.sh
-    cd $BRICKS_DIR/$dir/$experiment
+    cd $ABS_BRICKS_DIR/$dir/$experiment
     nice nohup $SCRIPT_DIR/run-job.sh $dir $experiment >> nohup.out 2>&1 &
   "
 done
