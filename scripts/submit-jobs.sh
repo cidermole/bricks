@@ -5,7 +5,10 @@ SCRIPT_DIR=$(dirname $(readlink -f "$0"))
 HOSTS="$1"
 shift
 
-pushd ~/mmt/run-bricks/mmt >/dev/null
+BRICKS_DIR=/home/dmadl/run-bricks/mmt
+CONF_DIR=/fs/lofn0/dmadl/mmt/bricks/examples/mmt
+
+pushd $BRICKS_DIR >/dev/null
 dir=$(date "+%Y-%m-%d_%H-%M-%S")
 #echo $dir
 mkdir $dir || exit 1
@@ -22,7 +25,7 @@ for host in $HOSTS; do
   experiment="$1"
   shift
 
-  if [ ! -e /fs/lofn0/dmadl/mmt/bricks/examples/mmt/$experiment.cfg ]; then
+  if [ ! -e $CONF_DIR/$experiment.cfg ]; then
     echo >&2 "error: no mmt experiment $experiment.cfg exists."
     continue
   fi
@@ -33,25 +36,25 @@ for host in $HOSTS; do
   # set up folder
   mkdir -p $experiment && pushd $experiment >/dev/null
   target=$(pwd)
-  pushd /fs/lofn0/dmadl/mmt/bricks/examples/mmt >/dev/null
+  pushd $CONF_DIR >/dev/null
   for part in *.cfg; do
-    ln -sf /fs/lofn0/dmadl/mmt/bricks/examples/mmt/$part $target/$part
+    ln -sf $CONF_DIR/$part $target/$part
   done
   popd >/dev/null
-  ln -sf /fs/lofn0/dmadl/mmt/bricks/examples/mmt/$experiment.cfg experiment.cfg
+  ln -sf $CONF_DIR/$experiment.cfg experiment.cfg
   bricks.py experiment.cfg
   popd >/dev/null
 
   # submit job to host
   ssh $host "
     . /fs/lofn0/dmadl/mmt/run-bricks/env.sh
-    cd /fs/lofn0/dmadl/mmt/run-bricks/mmt/$dir/$experiment
+    cd $BRICKS_DIR/$dir/$experiment
     nice nohup $SCRIPT_DIR/run-job.sh $dir $experiment >> nohup.out 2>&1 &
   "
 done
 
 popd >/dev/null  # $dir
-popd >/dev/null  # run-bricks/mmt
+popd >/dev/null  # $BRICKS_DIR
 
 if [ $# -gt 0 ]; then
   echo >&2 "warning: some jobs have not been assigned hosts:"

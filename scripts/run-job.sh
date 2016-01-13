@@ -12,7 +12,8 @@ host=$(hostname)
 ODIR=$(pwd)
 
 # local host working dir
-TMP_BRICKS_DIR=/fs/${host}0/dmadl/run-bricks-wd
+#TMP_BRICKS_DIR=/fs/${host}0/dmadl/run-bricks-wd
+TMP_BRICKS_DIR=/home/dmadl/run-bricks/mmt
 WDIR=$TMP_BRICKS_DIR/$dir/$experiment
 
 # copy and run elsewhere.
