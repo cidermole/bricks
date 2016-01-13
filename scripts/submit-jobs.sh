@@ -1,6 +1,7 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(dirname $(readlink -f "$0"))
+#SCRIPT_DIR=$(dirname $(readlink -f "$0"))  # not cross-host
+SCRIPT_DIR=/fs/lofn0/dmadl/mmt/bricks/scripts
 
 HOSTS="$1"
 shift
