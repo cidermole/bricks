@@ -21,7 +21,7 @@ def parseArguments():
                                                  'also copying the referenced data files.')
     parser.add_argument('-f', '--input', dest='sourceMosesIni', help='moses.ini in its original environment', nargs='?', default='/dev/stdin')
     parser.add_argument('-o', '--output', dest='targetMosesIni', help='target path to moses.ini or directory to store moses.ini', nargs='?', default='/dev/stdout')
-    parser.add_argument('output-data-path', dest='targetDataPath', help='target path to a directory to store data files')
+    parser.add_argument('output_data_path', help='target path to a directory to store data files')
     parser.add_argument('-d', '--dry-run', dest='dryRun', help='do not actually copy data files, just print summary', action='store_true')
 
     args = parser.parse_args()
@@ -168,7 +168,7 @@ args = parseArguments()
 args = fixPaths(args)
 
 with open(args.sourceMosesIni) as fin:
-    converter = MosesIniConverter(fin, args.targetDataPath)
+    converter = MosesIniConverter(fin, args.output_data_path)
     result = converter.convertMosesIni()
 
 with open(args.targetMosesIni, 'w') as fo:
