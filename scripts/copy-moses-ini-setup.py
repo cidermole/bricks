@@ -5,6 +5,8 @@
 
 import sys
 import os
+import glob
+import shutil
 import argparse
 from collections import Counter
 
@@ -52,6 +54,23 @@ class Feature:
 
     def __repr__(self):
         return str((self.nameStub, self.sourceFeaturePath, self.targetFeaturePath))
+
+    def copyData(self):
+        """
+        Copy the data files from sourceFeaturePath to targetFeaturePath.
+        This is convoluted because:
+        * path may be a filename prefix
+        * path may be a directory
+        In fact, it may be necessary to provide feature function specific rules here...
+        """
+        if os.path.isdir(self.sourceFeaturePath):
+            shutil.copytree(self.sourceFeaturePath, self.targetFeaturePath)
+        #elif os.path.isfile():
+        #    # BUT: maybe the named one is not the only file... we should still glob.
+        else:
+            for file in glob.glob(self.sourceFeaturePath + '*'):
+                target = os.path.join(os.path.dirname(self.targetFeaturePath), os.path.basename(file))
+                shutil.copy(file, target)
 
 
 class MosesIniConverter:
@@ -137,5 +156,6 @@ with open(args.sourceMosesIni) as fin:
 with open(args.targetPath, 'w') as fo:
     fo.write(result)
 
-# TODO: copy these
-print(converter.pathedFeatures)
+# copy the feature data files for features with a given 'path' attribute
+for feature in converter.pathedFeatures:
+    feature.copyData()
