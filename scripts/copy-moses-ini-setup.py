@@ -7,6 +7,9 @@
 
 # ConfigParser is not suitable to parse moses.ini since it contains lines without key-value pairs (without an equals sign.)
 # Homebrew moses.ini "parser" FTW.
+#
+# note: we could actually generate a shell script with "copy /fs/source/file.bin $target/file.bin" lines
+# "copy" being a shell function that users can write to e.g. scp
 
 import sys
 import os
@@ -72,6 +75,8 @@ class Feature:
         targetBase = os.path.dirname(self.targetFeaturePath)
         if not dryRun:
             os.makedirs(targetBase)
+        else:
+            sys.stderr.write('makedirs(%s)\n' % (targetBase))
         if os.path.isdir(self.sourceFeaturePath):
             if not dryRun:
                 shutil.copytree(self.sourceFeaturePath, self.targetFeaturePath)
