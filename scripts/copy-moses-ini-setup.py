@@ -19,9 +19,9 @@ from collections import Counter
 def parseArguments():
     parser = argparse.ArgumentParser(description='Copies a moses.ini file to a new location while ' +
                                                  'also copying the referenced data files.')
-    parser.add_argument('-f', 'sourceMosesIni', help='moses.ini in its original environment', nargs='?', default='/dev/stdin')
-    parser.add_argument('-o', 'targetPath', help='target path to moses.ini or directory to store moses.ini', nargs='?', default='/dev/stdout')
-    parser.add_argument('targetDataPath', help='target path to a directory to store data files')
+    parser.add_argument('-f', '--input', dest='sourceMosesIni', help='moses.ini in its original environment', nargs='?', default='/dev/stdin')
+    parser.add_argument('-o', '--output', dest='targetMosesIni', help='target path to moses.ini or directory to store moses.ini', nargs='?', default='/dev/stdout')
+    parser.add_argument('output-data-path', dest='targetDataPath', help='target path to a directory to store data files')
     parser.add_argument('-d', '--dry-run', dest='dryRun', help='do not actually copy data files, just print summary', action='store_true')
 
     args = parser.parse_args()
@@ -44,9 +44,9 @@ def fixPaths(args):
     if not os.path.isfile(args.sourceMosesIni):
         failMessage('sourceMosesIni %s is not a file.' % args.sourceMosesIni)
 
-    if os.path.isdir(args.targetPath):
+    if os.path.isdir(args.targetMosesIni):
         # use default file name moses.ini if storing to a directory
-        args.targetPath = os.path.join(args.targetPath, 'moses.ini')
+        args.targetMosesIni = os.path.join(args.targetMosesIni, 'moses.ini')
 
     if not os.path.isdir(args.targetDataPath):
         failMessage('targetDataPath %s is not a directory.' % args.targetDataPath)
@@ -171,7 +171,7 @@ with open(args.sourceMosesIni) as fin:
     converter = MosesIniConverter(fin, args.targetDataPath)
     result = converter.convertMosesIni()
 
-with open(args.targetPath, 'w') as fo:
+with open(args.targetMosesIni, 'w') as fo:
     fo.write(result)
 
 # copy the feature data files for features with a given 'path' attribute
