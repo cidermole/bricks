@@ -17,6 +17,7 @@ def parseArguments():
     parser.add_argument('sourceMosesIni', help='moses.ini in its original environment')
     parser.add_argument('targetPath', help='target path to moses.ini or directory to store moses.ini')
     parser.add_argument('targetDataPath', help='target path to a directory to store data files')
+    parser.add_argument('-d', '--dry-run', dest='dryRun', help='do not actually copy data files, just print summary')
 
     args = parser.parse_args()
 
@@ -55,7 +56,7 @@ class Feature:
     def __repr__(self):
         return str((self.nameStub, self.sourceFeaturePath, self.targetFeaturePath))
 
-    def copyData(self):
+    def copyData(self, dryRun=False):
         """
         Copy the data files from sourceFeaturePath to targetFeaturePath.
         This is convoluted because:
@@ -64,13 +65,19 @@ class Feature:
         In fact, it may be necessary to provide feature function specific rules here...
         """
         if os.path.isdir(self.sourceFeaturePath):
-            shutil.copytree(self.sourceFeaturePath, self.targetFeaturePath)
+            if not dryRun:
+                shutil.copytree(self.sourceFeaturePath, self.targetFeaturePath)
+            else:
+                sys.stderr.write('copytree(%s, %s)\n' % (self.sourceFeaturePath, self.targetFeaturePath))
         #elif os.path.isfile():
         #    # BUT: maybe the named one is not the only file... we should still glob.
         else:
             for file in glob.glob(self.sourceFeaturePath + '*'):
                 target = os.path.join(os.path.dirname(self.targetFeaturePath), os.path.basename(file))
-                shutil.copy(file, target)
+                if not dryRun:
+                    shutil.copy(file, target)
+                else:
+                    sys.stderr.write('copy(%s, %s)\n' % (file, target))
 
 
 class MosesIniConverter:
@@ -133,6 +140,7 @@ class MosesIniConverter:
         # this is the unique name for each feature (e.g. LM0)
         featureName = args['name']
 
+
         # the actual core reason why we parsed all the stuff
         if 'path' in args:
             sourceFeaturePath = args['path']
@@ -157,5 +165,5 @@ with open(args.targetPath, 'w') as fo:
     fo.write(result)
 
 # copy the feature data files for features with a given 'path' attribute
-for feature in converter.pathedFeatures:
-    feature.copyData()
+for f in converter.pathedFeatures:
+    converter.pathedFeatures[f].copyData(args.dryRun)
