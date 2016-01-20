@@ -19,8 +19,8 @@ from collections import Counter
 def parseArguments():
     parser = argparse.ArgumentParser(description='Copies a moses.ini file to a new location while ' +
                                                  'also copying the referenced data files.')
-    parser.add_argument('sourceMosesIni', help='moses.ini in its original environment')
-    parser.add_argument('targetPath', help='target path to moses.ini or directory to store moses.ini')
+    parser.add_argument('-f', 'sourceMosesIni', help='moses.ini in its original environment', nargs='?', default='/dev/stdin')
+    parser.add_argument('-o', 'targetPath', help='target path to moses.ini or directory to store moses.ini', nargs='?', default='/dev/stdout')
     parser.add_argument('targetDataPath', help='target path to a directory to store data files')
     parser.add_argument('-d', '--dry-run', dest='dryRun', help='do not actually copy data files, just print summary', action='store_true')
 
