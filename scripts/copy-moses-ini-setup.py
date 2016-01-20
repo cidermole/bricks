@@ -17,7 +17,7 @@ def parseArguments():
     parser.add_argument('sourceMosesIni', help='moses.ini in its original environment')
     parser.add_argument('targetPath', help='target path to moses.ini or directory to store moses.ini')
     parser.add_argument('targetDataPath', help='target path to a directory to store data files')
-    parser.add_argument('-d', '--dry-run', dest='dryRun', help='do not actually copy data files, just print summary')
+    parser.add_argument('-d', '--dry-run', dest='dryRun', help='do not actually copy data files, just print summary', action='store_true')
 
     args = parser.parse_args()
 
@@ -64,6 +64,9 @@ class Feature:
         * path may be a directory
         In fact, it may be necessary to provide feature function specific rules here...
         """
+        targetBase = os.path.dirname(self.targetFeaturePath)
+        if not dryRun:
+            os.makedirs(targetBase)
         if os.path.isdir(self.sourceFeaturePath):
             if not dryRun:
                 shutil.copytree(self.sourceFeaturePath, self.targetFeaturePath)
@@ -72,12 +75,14 @@ class Feature:
         #elif os.path.isfile():
         #    # BUT: maybe the named one is not the only file... we should still glob.
         else:
+            if dryRun:
+                sys.stderr.write('copy(%s, %s)\n' % (self.sourceFeaturePath + '*', targetBase))
             for file in glob.glob(self.sourceFeaturePath + '*'):
-                target = os.path.join(os.path.dirname(self.targetFeaturePath), os.path.basename(file))
+                target = os.path.join(targetBase, os.path.basename(file))
                 if not dryRun:
                     shutil.copy(file, target)
                 else:
-                    sys.stderr.write('copy(%s, %s)\n' % (file, target))
+                    sys.stderr.write('  copy(%s, %s)\n' % (file, target))
 
 
 class MosesIniConverter:
