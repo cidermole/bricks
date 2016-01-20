@@ -1,7 +1,12 @@
 #!/usr/bin/env python
+#
+# Copies moses.ini and model files referenced within to a new location,
+# producing a modified moses.ini pointing to the files in the new location.
+#
+# Author: David Madl <git@abanbytes.eu>
 
 # ConfigParser is not suitable to parse moses.ini since it contains lines without key-value pairs (without an equals sign.)
-# Homebrew ini "parser" FTW.
+# Homebrew moses.ini "parser" FTW.
 
 import sys
 import os
