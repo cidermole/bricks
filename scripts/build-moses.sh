@@ -8,6 +8,8 @@
 # from scratch, except if the exact configuration has already been
 # built before.
 
+# TODO: rename 'auto' -> 'staging'
+
 set -e
 
 #BUILD_OPTIONS=""
