@@ -33,7 +33,7 @@ MODE=""
 
 # parse command line args
 OPTIND=1
-while getopts "h?s:r:b:a:t:m:q?g:" opt; do
+while getopts "h?s:r:b:a:t:m:q?g:v?" opt; do
     case "$opt" in
     s)
         # source repository
@@ -65,6 +65,12 @@ while getopts "h?s:r:b:a:t:m:q?g:" opt; do
         # quick check if anything needs to be built.
         # returns 0 if everything is up-to-date (no work necessary).
         MODE="check"
+        ;;
+    v)
+        # like q), quick check, but instead of outputting moses path on success,
+        # always outputs the most recent git revision.
+        # returns 0 if everything is up-to-date (no work necessary).
+        MODE="revision"
         ;;
 
     g)
@@ -201,7 +207,18 @@ MOSES_TARGET_DIR=$AUTO_BUILD_DIR/moses.$MOSES_BRANCH.$MOSES_REV.$BUILD_TYPE
 mkdir -p $MOSES_TARGET_DIR
 
 
-if [ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT ]; then
+[ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT ]
+have_build=$?
+
+
+if [ "$MODE" == "revision" ]; then
+    # just print the revision, return status indicates whether we have a build
+    echo $MOSES_REV
+    exit $have_build
+fi
+
+
+if [ $have_build -eq 0 ]; then
     echo >&2 "There is already a build for this revision $MOSES_REV"
 
     # Restore stdout
