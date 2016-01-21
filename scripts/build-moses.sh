@@ -127,6 +127,12 @@ function ensure_have_moses_cached() {
       # maintain a recent moses git repo to avoid always having to pull the History of Time.
       git clone $MOSES_CACHED_REPO $MOSES_CACHED_DIR
   fi
+
+  # ensure it is kept up-to-date (avoid re-downloads)
+  pushd $MOSES_CACHED_DIR >/dev/null
+  git fetch >/dev/null 2>&1
+  git pull origin master >/dev/null 2>&1
+  popd >/dev/null
 }
 
 function ensure_have_dependencies() {
