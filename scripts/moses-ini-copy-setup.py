@@ -5,26 +5,13 @@
 #
 # Author: David Madl <git@abanbytes.eu>
 
-# ConfigParser is not suitable to parse moses.ini since it contains lines without key-value pairs (without an equals sign.)
-# Homebrew moses.ini "parser" FTW.
-#
-# note: we could actually generate a shell script with "copy /fs/source/file.bin $target/file.bin" lines
-# "copy" being a shell function that users can write to e.g. scp
-
 import sys
 import os
 import glob
 import shutil
 import argparse
 import logging
-from moses_ini import MosesIniParser
-
-
-def overrides(interface_class):
-    def overrider(method):
-        assert(method.__name__ in dir(interface_class))
-        return method
-    return overrider
+from moses_ini import MosesIniParser, Feature, overrides
 
 
 def parseArguments():
@@ -59,61 +46,6 @@ def fixPaths(args):
     return args
 
 
-class Feature:
-    """
-    Representation of single feature line in moses.ini
-    """
-    def __init__(self, nameStub, uniqueName, sourceDataPath):
-        """
-        @param nameStub:   PhraseTableMemory
-        @param uniqueName: PT0
-        @param sourceDataPath: /home/user/models/phrase-table.0-0.1.1.gz
-        """
-        self.nameStub, self.uniqueName, self.sourceDataPath = nameStub, uniqueName, sourceDataPath
-
-    def __repr__(self):
-        return str((self.nameStub, self.uniqueName, self.sourceDataPath))
-
-    def targetFeaturePath(self, targetDataPath):
-        """
-        Absolute target filename (or prefix) for feature data file (or file prefix).
-        @param targetDataPath: basedir to copy to
-        """
-        return os.path.join(targetDataPath, self.uniqueName, os.path.basename(self.sourceDataPath))
-
-    def copyData(self, targetDataPath, dryRun=False):
-        """
-        Copy the data files from sourceFeaturePath to targetFeaturePath.
-        This is convoluted because:
-        * path may be a filename prefix
-        * path may be a directory
-        In fact, it may be necessary to provide feature function specific rules here...
-        @param targetDataPath: basedir to copy to
-        """
-        targetPath = self.targetFeaturePath(targetDataPath)
-        targetBase = os.path.dirname(targetDataPath)
-        if not dryRun:
-            os.makedirs(targetBase)
-        else:
-            sys.stderr.write('makedirs(%s)\n' % (targetBase))
-        if os.path.isdir(self.sourceDataPath):
-            if not dryRun:
-                shutil.copytree(self.sourceDataPath, targetPath)
-            else:
-                sys.stderr.write('copytree(%s, %s)\n' % (self.sourceDataPath, targetPath))
-        #elif os.path.isfile():
-        #    # BUT: maybe the named one is not the only file... we should still glob.
-        else:
-            if dryRun:
-                sys.stderr.write('copy(%s, %s)\n' % (self.sourceDataPath + '*', targetBase))
-            for file in glob.glob(self.sourceDataPath + '*'):
-                target = os.path.join(targetBase, os.path.basename(file))
-                if not dryRun:
-                    shutil.copy(file, target)
-                else:
-                    sys.stderr.write('  copy(%s, %s)\n' % (file, target))
-
-
 class MosesIniConverter(MosesIniParser):
     def __init__(self, mosesIni, targetDataPath, logger=None):
         super(MosesIniConverter, self).__init__(mosesIni, logger)
@@ -134,7 +66,7 @@ class MosesIniConverter(MosesIniParser):
 
         # the actual core reason why we parsed all the stuff
         if 'path' in args:
-            feature = Feature(nameStub, featureName, args['path'])
+            feature = Feature(nameStub, featureName, sourceDataPath=args['path'], logger=self.logger)
 
             # change path to the new targetDataPath-prefixed version
             args['path'] = feature.targetFeaturePath(self.targetDataPath)

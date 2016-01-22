@@ -9,6 +9,78 @@
 
 from collections import Counter
 import logging
+import glob, os, shutil
+
+
+def overrides(interface_class):
+    def overrider(method):
+        assert(method.__name__ in dir(interface_class))
+        return method
+    return overrider
+
+
+
+class Feature:
+    """
+    Representation of single feature line in moses.ini
+    """
+    def __init__(self, nameStub, uniqueName, sourceDataPath, logger=None):
+        """
+        @param nameStub:   PhraseTableMemory
+        @param uniqueName: PT0
+        @param sourceDataPath: /home/user/models/phrase-table.0-0.1.1.gz
+        """
+        self.nameStub, self.uniqueName, self.sourceDataPath = nameStub, uniqueName, sourceDataPath
+        self.logger = logger
+
+    def __repr__(self):
+        return str((self.nameStub, self.uniqueName, self.sourceDataPath))
+
+    def targetFeaturePath(self, targetDataPath):
+        """
+        Absolute target filename (or prefix) for feature data file (or file prefix).
+        @param targetDataPath: basedir to copy to
+        """
+        return os.path.join(targetDataPath, self.uniqueName, os.path.basename(self.sourceDataPath))
+
+    def copyData(self, targetDataPath, dryRun=False):
+        """
+        Copy the data files from sourceFeaturePath to targetFeaturePath.
+        This is convoluted because:
+        * path may be a filename prefix
+        * path may be a directory
+        In fact, it may be necessary to provide feature function specific rules here...
+        @param targetDataPath: basedir to copy to
+        """
+        targetPath = self.targetFeaturePath(targetDataPath)
+        targetBase = os.path.dirname(targetDataPath)
+        if not dryRun:
+            os.makedirs(targetBase)
+        else:
+            self.logger.info('makedirs(%s)' % (targetBase))
+        if os.path.isdir(self.sourceDataPath):
+            if not dryRun:
+                shutil.copytree(self.sourceDataPath, targetPath)
+            else:
+                self.logger.info('copytree(%s, %s)' % (self.sourceDataPath, targetPath))
+        #elif os.path.isfile():
+        #    # BUT: maybe the named one is not the only file... we should still glob.
+        else:
+            if dryRun:
+                self.logger.info('copy(%s, %s)' % (self.sourceDataPath + '*', targetBase))
+            for file in glob.glob(self.sourceDataPath + '*'):
+                target = os.path.join(targetBase, os.path.basename(file))
+                if not dryRun:
+                    shutil.copy(file, target)
+                else:
+                    self.logger.info('  copy(%s, %s)' % (file, target))
+
+    def dataFiles(self):
+        # like above (TODO: unify)
+        if os.path.isdir(self.sourceDataPath):
+            return [self.sourceDataPath]
+        else:
+            return [file for file in glob.glob(self.sourceDataPath + '*')]
 
 
 class MosesIniParser(object):
