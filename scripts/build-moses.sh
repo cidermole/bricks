@@ -215,8 +215,12 @@ MOSES_TARGET_DIR=$AUTO_BUILD_DIR/moses.$MOSES_BRANCH.$MOSES_REV.$BUILD_TYPE
 mkdir -p $MOSES_TARGET_DIR
 
 
-[ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT ]
-have_build=$?
+# note set -e, so we cannot just run test and set have_build=$?
+if [ -e $MOSES_TARGET_DIR/bin/$MOSES_BIN_TARGET_OUT ]; then
+  have_build=0
+else
+  have_build=1
+fi
 
 
 if [ "$MODE" == "revision" ]; then
