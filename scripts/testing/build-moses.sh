@@ -17,5 +17,7 @@ rv=$?
 
 echo gitrev=$gitrev
 echo moses=$moses
+# descriptor is a filename-ready summary of build source and options, e.g. moses.master.42b8b8.Release
+echo descriptor=$(basename $(dirname $(dirname $moses)))
 
 exit $rv
