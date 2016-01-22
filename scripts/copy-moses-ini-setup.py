@@ -19,6 +19,13 @@ import argparse
 from collections import Counter
 
 
+def overrides(interface_class):
+    def overrider(method):
+        assert(method.__name__ in dir(interface_class))
+        return method
+    return overrider
+
+
 def parseArguments():
     parser = argparse.ArgumentParser(description='Copies a moses.ini file to a new location while ' +
                                                  'also copying the referenced data files.')
@@ -58,36 +65,53 @@ def fixPaths(args):
 
 
 class Feature:
-    def __init__(self, nameStub, sourceFeaturePath, targetFeaturePath):
-        self.nameStub, self.sourceFeaturePath, self.targetFeaturePath = nameStub, sourceFeaturePath, targetFeaturePath
+    """
+    Representation of single feature line in moses.ini
+    """
+    def __init__(self, nameStub, uniqueName, sourceDataPath):
+        """
+        @param nameStub:   PhraseTableMemory
+        @param uniqueName: PT0
+        @param sourceDataPath: /home/user/models/phrase-table.0-0.1.1.gz
+        """
+        self.nameStub, self.uniqueName, self.sourceDataPath = nameStub, uniqueName, sourceDataPath
 
     def __repr__(self):
-        return str((self.nameStub, self.sourceFeaturePath, self.targetFeaturePath))
+        return str((self.nameStub, self.uniqueName, self.sourceDataPath))
 
-    def copyData(self, dryRun=False):
+    def targetFeaturePath(self, targetDataPath):
+        """
+        Absolute target filename (or prefix) for feature data file (or file prefix).
+        @param targetDataPath: basedir to copy to
+        """
+        return os.path.join(targetDataPath, self.uniqueName, os.path.basename(self.sourceDataPath))
+
+    def copyData(self, targetDataPath, dryRun=False):
         """
         Copy the data files from sourceFeaturePath to targetFeaturePath.
         This is convoluted because:
         * path may be a filename prefix
         * path may be a directory
         In fact, it may be necessary to provide feature function specific rules here...
+        @param targetDataPath: basedir to copy to
         """
-        targetBase = os.path.dirname(self.targetFeaturePath)
+        targetPath = self.targetFeaturePath(targetDataPath)
+        targetBase = os.path.dirname(targetDataPath)
         if not dryRun:
             os.makedirs(targetBase)
         else:
             sys.stderr.write('makedirs(%s)\n' % (targetBase))
-        if os.path.isdir(self.sourceFeaturePath):
+        if os.path.isdir(self.sourceDataPath):
             if not dryRun:
-                shutil.copytree(self.sourceFeaturePath, self.targetFeaturePath)
+                shutil.copytree(self.sourceDataPath, targetPath)
             else:
-                sys.stderr.write('copytree(%s, %s)\n' % (self.sourceFeaturePath, self.targetFeaturePath))
+                sys.stderr.write('copytree(%s, %s)\n' % (self.sourceDataPath, targetPath))
         #elif os.path.isfile():
         #    # BUT: maybe the named one is not the only file... we should still glob.
         else:
             if dryRun:
-                sys.stderr.write('copy(%s, %s)\n' % (self.sourceFeaturePath + '*', targetBase))
-            for file in glob.glob(self.sourceFeaturePath + '*'):
+                sys.stderr.write('copy(%s, %s)\n' % (self.sourceDataPath + '*', targetBase))
+            for file in glob.glob(self.sourceDataPath + '*'):
                 target = os.path.join(targetBase, os.path.basename(file))
                 if not dryRun:
                     shutil.copy(file, target)
@@ -95,16 +119,14 @@ class Feature:
                     sys.stderr.write('  copy(%s, %s)\n' % (file, target))
 
 
-class MosesIniConverter:
-    def __init__(self, mosesIni, targetDataPath):
-        self.mosesIni, self.targetDataPath = mosesIni, targetDataPath
-
+class MosesIniParser(object):
+    def __init__(self, mosesIni):
+        self.mosesIni = mosesIni
         self.pathedFeatures = {}
         self.description_counts = Counter()  # count unnamed moses features
-        self.convertedIni = []
 
-    def convertMosesIni(self):
-        """Converts moses.ini paths to point to targetDataPath and collects features"""
+    def run(self):
+        """Parses moses.ini and executes parseFeatureLine() for each feature line."""
         featureSection = False
 
         for iline, line in enumerate(self.mosesIni):
@@ -124,17 +146,13 @@ class MosesIniConverter:
 
             parseLine = parseLine and featureSection
 
-            # replicate other lines we don't care about
             if not parseLine:
-                self.convertedIni.append(line)
-                continue
+                self.handleNonFeatureLine(iline, line)
+            else:
+                self.parseFeatureLine(iline, line)
 
-            self.parseAppendFeatureLine(iline, line)
-
-        return '\n'.join(self.convertedIni)
-
-    def parseAppendFeatureLine(self, iline, line):
-        """Parse a feature line, replacing path if present, and append it to convertedIni."""
+    def parseFeatureLine(self, iline, line):
+        """Parse a feature line and handle it."""
         parts = line.split(' ')
         nameStub = parts[0]
         assert(len(nameStub) > 0)  # skipping empty lines guarantees this
@@ -152,21 +170,60 @@ class MosesIniConverter:
             self.description_counts[nameStub] += 1
             args['name'] = nameStub + str(c)
 
-        # this is the unique name for each feature (e.g. LM0)
-        featureName = args['name']
+        self.handleFeatureLine(nameStub, args, iline, line)
 
+    def handleNonFeatureLine(self, iline, line):
+        """Parse a moses.ini line that is not a feature definition."""
+        pass
+
+    def handleFeatureLine(self, nameStub, args, iline, line):
+        """
+        Called for each feature line in moses.ini.
+        @param nameStub: PhraseTableMemory
+        @param args:     dict of string key-value pairs in feature config line
+        @param iline:    0-based file line
+        @param line:     original feature line
+        """
+        pass
+
+    def makeFeatureLine(self, nameStub, args):
+        return '%s %s' % (nameStub, ' '.join(['='.join(t) for t in args.items()]))
+
+
+class MosesIniConverter(MosesIniParser):
+    def __init__(self, mosesIni, targetDataPath):
+        super(MosesIniConverter, self).__init__(mosesIni)
+        self.targetDataPath = targetDataPath
+        self.convertedIniLines = []
+
+    @overrides(MosesIniParser)
+    def handleNonFeatureLine(self, iline, line):
+        # replicate other lines we don't care about
+        self.convertedIniLines.append(line)
+
+    @overrides(MosesIniParser)
+    def handleFeatureLine(self, nameStub, args, iline, line):
+        """Replace path if present and append (changed) feature line."""
+
+        # unique name for each feature (e.g. LM0)
+        featureName = args['name']
 
         # the actual core reason why we parsed all the stuff
         if 'path' in args:
-            sourceFeaturePath = args['path']
-            targetFeaturePath = os.path.join(self.targetDataPath, featureName, os.path.basename(args['path']))
-            self.pathedFeatures[featureName] = Feature(nameStub, sourceFeaturePath, targetFeaturePath)
+            feature = Feature(nameStub, featureName, args['path'])
 
             # change path to the new targetDataPath-prefixed version
-            args['path'] = targetFeaturePath
-            line = '%s %s' % (nameStub, ' '.join(['='.join(t) for t in args.items()]))
+            args['path'] = feature.targetFeaturePath(self.targetDataPath)
 
-        self.convertedIni.append(line)
+            # use new target path in feature line
+            line = self.makeFeatureLine(nameStub, args)
+            self.pathedFeatures[featureName] = feature
+
+        self.convertedIniLines.append(line)
+
+    def convert(self):
+        self.run()
+        return '\n'.join(self.convertedIniLines)
 
 
 args = parseArguments()
@@ -174,11 +231,11 @@ args = fixPaths(args)
 
 with open(args.source_moses_ini) as fin:
     converter = MosesIniConverter(fin, args.output_data_path)
-    result = converter.convertMosesIni()
+    result = converter.convert()
 
 with open(args.target_moses_ini, 'w') as fo:
     fo.write(result)
 
 # copy the feature data files for features with a given 'path' attribute
 for f in converter.pathedFeatures:
-    converter.pathedFeatures[f].copyData(args.dryRun)
+    converter.pathedFeatures[f].copyData(converter.targetDataPath, args.dryRun)
