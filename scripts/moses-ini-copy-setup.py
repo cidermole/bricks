@@ -85,6 +85,8 @@ class MosesIniConverter(MosesIniParser):
 args = parseArguments()
 args = fixPaths(args)
 
+logging.basicConfig(level=logging.INFO)
+
 with open(args.source_moses_ini) as fin:
     converter = MosesIniConverter(fin, args.output_data_path, logger=logging.getLogger())
     result = converter.convert()

@@ -37,6 +37,8 @@ class MosesIniDataFiles(MosesIniParser):
 
 args = parseArguments()
 
+logging.basicConfig(level=logging.INFO)
+
 with open(args.source_moses_ini) as fin:
     df = MosesIniDataFiles(fin, logger=logging.getLogger())
     result = df.dataFiles()
