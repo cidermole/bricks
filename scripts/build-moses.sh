@@ -347,7 +347,7 @@ fi
 
 if [ "$TOOLSET_GCC" != "" ]; then
   # patch a line that has stayed constant at least since Moses 3.0
-  sed -i 's/external-lib z ;/external-lib z ;\nrequirements += <linkflags>-Wl,-rpath=XORIGIN/../lib ;/g' Jamroot
+  sed -i 's#external-lib z ;#external-lib z ;\nrequirements += <linkflags>-Wl,-rpath=XORIGIN/../lib ;#g' Jamroot
 fi
 
 
