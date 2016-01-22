@@ -339,6 +339,19 @@ else
     WITH_BOOST="--with-boost=./opt"
 fi
 
+
+# libstdc++ hack: include ../lib in rpath, so a libstdc++ can be shipped
+# with moses for older distributions. This path is relative from wherever
+# moses is executed from.
+# see https://enchildfone.wordpress.com/2010/03/23/a-description-of-rpath-origin-ld_library_path-and-portable-linux-binaries/
+
+if [ "$TOOLSET_GCC" != "" ]; then
+  # patch a line that has stayed constant at least since Moses 3.0
+  sed -i 's/external-lib z ;/external-lib z ;\nrequirements += <linkflags>-Wl,-rpath=XORIGIN/../lib ;/g' Jamroot
+fi
+
+
+
 set -e -o pipefail
 ./bjam --with-irstlm=./opt $WITH_BOOST --with-cmph=./opt --with-xmlrpc-c=./opt --with-mm --with-probing-pt -j$(getconf _NPROCESSORS_ONLN) $BJAM_TOOLSET $BUILD_OPTIONS
 
@@ -348,8 +361,21 @@ if [ "$MOSES_BIN_TARGET" != "" ]; then
     # we actually find the first, but that should be the only one and hence recent
     moses_bin_target=$(find . -name "$MOSES_BIN_TARGET" -type f | grep '/bin/' | head -n 1)
     cp $moses_bin_target bin/
+
+    # remember binary name
+    moses_bin_target=bin/$(basename $moses_bin_target)
+else
+    # guess binary name
+    moses_bin_target=bin/moses
 fi
 
+if [ "$TOOLSET_GCC" != "" ]; then
+## ...
+  # change XORIGIN to the magic variable
+  chrpath -r '$ORIGIN/../lib' $moses_bin_target
+  # copy the used lib
+  cp $TOOLSET_GCC/lib64/libstdc++.so.6 lib/
+fi
 
 #fi
 
