@@ -224,6 +224,9 @@ fi
 
 
 if [ "$MODE" == "revision" ]; then
+    # Restore stdout
+    exec 1<&6  # restore stdout from fd=6
+
     # just print the revision, return status indicates whether we have a build
     echo $MOSES_REV
     exit $have_build
