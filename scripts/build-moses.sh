@@ -115,7 +115,7 @@ fi
 
 function have_native_boost() {
     if [ -e /usr/include/boost/version.hpp ]; then
-        boost_version=$(awk '/define BOOST_VERSION/ {print $3}' /usr/include/boost/version.hpp)
+        boost_version=$(gawk '/define BOOST_VERSION/ {print $3}' /usr/include/boost/version.hpp)
         if [ $boost_version -ge 105900 ]; then
             # if system has at least Boost 1.59, then don't bother using the other one.
             return 0
@@ -181,7 +181,7 @@ function get_git_revision() {
     git_replace_remote_and_pull
 
     # first 7 characters of revision
-    MOSES_REV=$(git log | awk '/^commit/ { print(substr($2, 0, 7)); exit; }')
+    MOSES_REV=$(git log | gawk '/^commit/ { print(substr($2, 0, 7)); exit; }')
 
     # didn't want to use "git describe --dirty" here, because it's so long.
 
