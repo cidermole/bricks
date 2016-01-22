@@ -16,7 +16,8 @@ import os
 import glob
 import shutil
 import argparse
-from collections import Counter
+import logging
+from moses_ini import MosesIniParser
 
 
 def overrides(interface_class):
@@ -42,12 +43,6 @@ def parseArguments():
 def failMessage(message):
     sys.stderr.write('error: %s\n' % message)
     sys.exit(1)
-
-
-def assertOrWarnLine(cond, iline, message):
-    if not cond:
-        sys.stderr.write('warning: parsing moses.ini line %d: %s\n' % (iline + 1, message))
-    return cond
 
 
 def fixPaths(args):
@@ -119,80 +114,9 @@ class Feature:
                     sys.stderr.write('  copy(%s, %s)\n' % (file, target))
 
 
-class MosesIniParser(object):
-    def __init__(self, mosesIni):
-        self.mosesIni = mosesIni
-        self.pathedFeatures = {}
-        self.description_counts = Counter()  # count unnamed moses features
-
-    def run(self):
-        """Parses moses.ini and executes parseFeatureLine() for each feature line."""
-        featureSection = False
-
-        for iline, line in enumerate(self.mosesIni):
-            parseLine = True
-            line = line.rstrip()
-            if len(line) == 0 or line[0] == '#':
-                # empty lines and comments
-                parseLine = False
-
-            # detect the [feature] section, activate featureSection
-            if line == '[feature]':
-                featureSection = True
-                parseLine = False
-            elif len(line) > 0 and line[0] == '[':
-                featureSection = False
-                parseLine = False
-
-            parseLine = parseLine and featureSection
-
-            if not parseLine:
-                self.handleNonFeatureLine(iline, line)
-            else:
-                self.parseFeatureLine(iline, line)
-
-    def parseFeatureLine(self, iline, line):
-        """Parse a feature line and handle it."""
-        parts = line.split(' ')
-        nameStub = parts[0]
-        assert(len(nameStub) > 0)  # skipping empty lines guarantees this
-
-        try:
-            # len(t) > 0 filters out duplicate spaces
-            args = dict([tuple(t.split('=')) for t in parts[1:] if len(t) > 0])
-        except ValueError:
-            assertOrWarnLine(False, iline, 'failed to parse feature line')
-            raise
-
-        # automatic naming for features without a name=, just like in moses
-        if not 'name' in args:
-            c = self.description_counts[nameStub]
-            self.description_counts[nameStub] += 1
-            args['name'] = nameStub + str(c)
-
-        self.handleFeatureLine(nameStub, args, iline, line)
-
-    def handleNonFeatureLine(self, iline, line):
-        """Parse a moses.ini line that is not a feature definition."""
-        pass
-
-    def handleFeatureLine(self, nameStub, args, iline, line):
-        """
-        Called for each feature line in moses.ini.
-        @param nameStub: PhraseTableMemory
-        @param args:     dict of string key-value pairs in feature config line
-        @param iline:    0-based file line
-        @param line:     original feature line
-        """
-        pass
-
-    def makeFeatureLine(self, nameStub, args):
-        return '%s %s' % (nameStub, ' '.join(['='.join(t) for t in args.items()]))
-
-
 class MosesIniConverter(MosesIniParser):
-    def __init__(self, mosesIni, targetDataPath):
-        super(MosesIniConverter, self).__init__(mosesIni)
+    def __init__(self, mosesIni, targetDataPath, logger=None):
+        super(MosesIniConverter, self).__init__(mosesIni, logger)
         self.targetDataPath = targetDataPath
         self.convertedIniLines = []
 
@@ -230,7 +154,7 @@ args = parseArguments()
 args = fixPaths(args)
 
 with open(args.source_moses_ini) as fin:
-    converter = MosesIniConverter(fin, args.output_data_path)
+    converter = MosesIniConverter(fin, args.output_data_path, logger=logging.getLogger())
     result = converter.convert()
 
 with open(args.target_moses_ini, 'w') as fo:
