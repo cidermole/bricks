@@ -53,7 +53,7 @@ class Feature:
         @param targetDataPath: basedir to copy to
         """
         targetPath = self.targetFeaturePath(targetDataPath)
-        targetBase = os.path.dirname(targetDataPath)
+        targetBase = os.path.dirname(targetPath)
         if not dryRun:
             os.makedirs(targetBase)
         else:
