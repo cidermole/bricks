@@ -84,6 +84,10 @@ function lang_split() {
   eval $(echo $1 | awk 'BEGIN {FS="-"} { print "src_lang=" $1 "; trg_lang=" $2 }')
 }
 
+function lowercase() {
+  tr '[:upper:]' '[:lower:]'
+}
+
 # Compile recent moses
 eval $(ssh saxnot "$build_moses")
 # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
@@ -128,6 +132,7 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   cat empty $corpus/test.src | $moses_cmdline 2> moses.stderr | timestamp_lines > test.timestamped.hyp
   timestamp > $wd/profile/timestamp.after_moses
 
+  # TODO: move into function, use vars
   # get translation (cut the times off): needs Bash for $'\t'
   cut -d $'\t' -f 2- test.timestamped.hyp | awk 'NR>1' > test.hyp
   # get timestamps for each sentence's arrival time
@@ -139,8 +144,8 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   filter_moses_stderr moses.stderr > $wd/profile/moses.timing.stderr
 
   # MultEval requires lowercased corpora
-  tr '[:upper:]' '[:lower:]' < test.hyp > test.lc.hyp
-  tr '[:upper:]' '[:lower:]' < $corpus/test.ref > test.lc.ref
+  lowercase < test.hyp > test.lc.hyp
+  lowercase < $corpus/test.ref > test.lc.ref
 
   $multeval eval --refs test.lc.ref --hyps-baseline test.lc.hyp --meteor.language $trg_lang > $wd/multeval.out
 
