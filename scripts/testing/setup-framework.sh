@@ -21,6 +21,7 @@ pushd $TEST_FRAMEWORK
 
 # scripts to run experiments
 # for now: (TODO: move to github)
+# TODO: move bricks to tools/bricks
 [ ! -e bricks ] && ln -sf /fs/lofn0/dmadl/mmt/bricks bricks
 
 # experiment model staging area
@@ -34,11 +35,14 @@ ln -sf /fs/crom0/mmt/testing/wd wd
 # moses build staging area
 ln -sf /fs/saxnot0/dmadl/build/auto build
 
+# tools (multeval)
+ln -sf /home/shared/mmt/tools tools
 
 # /home/shared/mmt/testing/bricks
 # /home/shared/mmt/testing/models
 # /home/shared/mmt/testing/wd
 # /home/shared/mmt/testing/build
+# /home/shared/mmt/testing/tools
 
 
 #umask 0007

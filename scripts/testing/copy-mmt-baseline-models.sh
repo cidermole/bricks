@@ -7,6 +7,9 @@
 #
 # Copies into model_dir()/moses.${id}.ini
 #
+# Use --dry-run switch to avoid copying data files (passed through to
+# moses-ini-copy-setup.py)
+#
 # Author: David Madl <git@abanbytes.eu>
 
 # obtain paths ($TEST_FRAMEWORK, ...)
@@ -18,6 +21,7 @@ EMS_RUNS_BASE=/home/bhaddow/experiments/mmt
 
 function model_dir() {
   echo ${TEST_FRAMEWORK}/models/${setup}/${src_lang}-${trg_lang}
+  # note: dependency in run-tradeoff-tests.sh
 }
 
 moses_ini_copy_setup=$TEST_FRAMEWORK/bricks/scripts/moses-ini-copy-setup.py
@@ -85,7 +89,12 @@ for setup in $setups; do
     mkdir -p $md
 
     # Copy models and adapt moses.ini
-    $moses_ini_copy_setup -f $moses_ini $md -o $md/moses.${id}.ini
+    $moses_ini_copy_setup -f $moses_ini $md -o $md/moses.${id}.ini "$@"
+
+    # Copy test corpus
+    mkdir -p $md/corpus
+    cp $test_src $md/corpus/test.src
+    cp $test_ref $md/corpus/test.ref
   done
 
   # copy remaining moses.ini files (weights) using --no-overwrite-data
@@ -95,6 +104,6 @@ for setup in $setups; do
     md=$(model_dir)
 
     # Adapt moses.ini, but do not copy data again, using --no-overwrite-data
-    $moses_ini_copy_setup -f $moses_ini $md -o $md/moses.${id}.ini --no-overwrite-data
+    $moses_ini_copy_setup -f $moses_ini $md -o $md/moses.${id}.ini --no-overwrite-data "$@"
   done
 done
