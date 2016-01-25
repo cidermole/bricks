@@ -19,6 +19,32 @@ def overrides(interface_class):
     return overrider
 
 
+class FancyCopy:
+    """
+    Wraps filesystem functions to provide no-overwrite and dry-run
+    versions.
+    """
+    def __init__(self, noOverwrite, dryRun, logger=None):
+        self.noOverwrite, self.dryRun = noOverwrite, dryRun
+        self.logger = logger
+
+    def makedirs(self, path):
+        if not self.dryRun:
+            os.makedirs(path)
+        else:
+            self.logger.info('makedirs(%s)' % path)
+
+    def copy(self, src, dst):
+        if not self.dryRun:
+            shutil.copy(src, dst)
+        else:
+            self.logger.info('  copy(%s, %s)' % (src, dst))
+
+    def copytree(self, src, dst):
+        if not self.dryRun:
+            shutil.copytree(src, dst)
+        else:
+            self.logger.info('copytree(%s, %s)' % (src, dst))
 
 class Feature:
     """
@@ -43,7 +69,7 @@ class Feature:
         """
         return os.path.join(targetDataPath, self.uniqueName, os.path.basename(self.sourceDataPath))
 
-    def copyData(self, targetDataPath, dryRun=False):
+    def copyData(self, targetDataPath, noOverwrite=False, dryRun=False):
         """
         Copy the data files from sourceFeaturePath to targetFeaturePath.
         This is convoluted because:
@@ -51,18 +77,17 @@ class Feature:
         * path may be a directory
         In fact, it may be necessary to provide feature function specific rules here...
         @param targetDataPath: basedir to copy to
+        @param noOverwrite: do not overwrite datafiles if they already exist
+        @param dryRun: do not actually copy datafiles, just print what would be copied
         """
+        fs = FancyCopy(noOverwrite, dryRun)
         targetPath = self.targetFeaturePath(targetDataPath)
         targetBase = os.path.dirname(targetPath)
-        if not dryRun:
-            os.makedirs(targetBase)
-        else:
-            self.logger.info('makedirs(%s)' % (targetBase))
+
+        fs.makedirs(targetBase)
+
         if os.path.isdir(self.sourceDataPath):
-            if not dryRun:
-                shutil.copytree(self.sourceDataPath, targetPath)
-            else:
-                self.logger.info('copytree(%s, %s)' % (self.sourceDataPath, targetPath))
+            fs.copytree(self.sourceDataPath, targetPath)
         #elif os.path.isfile():
         #    # BUT: maybe the named one is not the only file... we should still glob.
         else:
@@ -70,10 +95,7 @@ class Feature:
                 self.logger.info('copy(%s, %s)' % (self.sourceDataPath + '*', targetBase))
             for file in glob.glob(self.sourceDataPath + '*'):
                 target = os.path.join(targetBase, os.path.basename(file))
-                if not dryRun:
-                    shutil.copy(file, target)
-                else:
-                    self.logger.info('  copy(%s, %s)' % (file, target))
+                fs.copy(file, target)
 
     def dataFiles(self):
         # like above (TODO: unify)
