@@ -21,7 +21,7 @@ pushd $TEST_FRAMEWORK
 
 # scripts to run experiments
 # for now: (TODO: move to github)
-ln -s /fs/lofn0/dmadl/mmt/bricks bricks
+ln -sf /fs/lofn0/dmadl/mmt/bricks bricks
 
 # experiment model staging area
 # TODO: ln -sf /fs/crom0/mmt/testing/models models
