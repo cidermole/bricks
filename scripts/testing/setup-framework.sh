@@ -24,9 +24,11 @@ pushd $TEST_FRAMEWORK
 ln -sf /fs/lofn0/dmadl/mmt/bricks bricks
 
 # experiment model staging area
+mkdir -p /fs/crom0/mmt/testing/models
 ln -sf /fs/crom0/mmt/testing/models models
 
 # experiment working directory
+mkdir -p /fs/crom0/mmt/testing/wd
 ln -sf /fs/crom0/mmt/testing/wd wd
 
 # moses build staging area
