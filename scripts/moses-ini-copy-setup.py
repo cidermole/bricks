@@ -20,6 +20,7 @@ def parseArguments():
     parser.add_argument('-f', '--input', dest='source_moses_ini', help='moses.ini in its original environment', nargs='?', default='/dev/stdin')
     parser.add_argument('-o', '--output', dest='target_moses_ini', help='target path to moses.ini or directory to store moses.ini', nargs='?', default='/dev/stdout')
     parser.add_argument('output_data_path', help='target path to a directory to store data files')
+    parser.add_argument('-n', '--no-overwrite', dest='noOverwrite', help='do not overwrite data files if they already exist', action='store_true')
     parser.add_argument('-d', '--dry-run', dest='dryRun', help='do not actually copy data files, just print summary', action='store_true')
 
     args = parser.parse_args()
@@ -96,4 +97,4 @@ with open(args.target_moses_ini, 'w') as fo:
 
 # copy the feature data files for features with a given 'path' attribute
 for f in converter.pathedFeatures:
-    converter.pathedFeatures[f].copyData(converter.targetDataPath, args.dryRun)
+    converter.pathedFeatures[f].copyData(converter.targetDataPath, args.noOverwrite, args.dryRun)

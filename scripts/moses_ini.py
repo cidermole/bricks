@@ -25,26 +25,35 @@ class FancyCopy:
     versions.
     """
     def __init__(self, noOverwrite, dryRun, logger=None):
-        self.noOverwrite, self.dryRun = noOverwrite, dryRun
+        self.overwrite, self.dryRun = not noOverwrite, dryRun
         self.logger = logger
 
     def makedirs(self, path):
-        if not self.dryRun:
-            os.makedirs(path)
-        else:
+        if self.dryRun:
             self.logger.info('makedirs(%s)' % path)
+            return
+        os.makedirs(path)
 
     def copy(self, src, dst):
-        if not self.dryRun:
+        if self.dryRun:
+            self.logger.info('  copy(%s, %s)' % (src, dst))
+            return
+
+        if not os.path.exists(dst) or self.overwrite:
             shutil.copy(src, dst)
         else:
-            self.logger.info('  copy(%s, %s)' % (src, dst))
+            self.logger.debug('  copy(%s, %s) skipped: target exists.' % (src, dst))
 
     def copytree(self, src, dst):
-        if not self.dryRun:
+        if self.dryRun:
+            self.logger.info('copytree(%s, %s)' % (src, dst))
+            return
+
+        if not os.path.exists(dst) or self.overwrite:
             shutil.copytree(src, dst)
         else:
-            self.logger.info('copytree(%s, %s)' % (src, dst))
+            self.logger.debug('copytree(%s, %s) skipped: target exists.' % (src, dst))
+
 
 class Feature:
     """
