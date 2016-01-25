@@ -8,7 +8,8 @@
 # Author: David Madl <git@abanbytes.eu>
 
 #                              1: cube pruning,     pop limit, -s stack_size
-MOSES_OPTS="--search-algorithm 1 --cube-pruning-pop-limit 5000 -s 5000"
+MOSES_OPTS="--search-algorithm 1 --cube-pruning-pop-limit 5000 -s 5000 -v 1"
+# MUST have verbosity level 1 for timestamps!                        -v verbosity
 
 # obtain paths ($TEST_FRAMEWORK, ...)
 . $(dirname $0)/env.sh
@@ -24,6 +25,33 @@ function cache_data() {
   for f in $($moses_ini_data -f $ini); do
     cat $f > /dev/null
   done
+}
+
+# Timestamp each line (for sentence-level profiling and to avoid shutdown costs)
+#
+function timestamp_lines() {
+  # note: a line fed to this is pretty fast (20-30 us)
+  # try $ echo -e "\n\n\n\n\n\n\n\n\n" | timestamp_lines
+  perl -pne '
+    use Time::HiRes (gettimeofday);
+    use POSIX qw(strftime);
+    ($s,$ms) = gettimeofday();
+    $ms = sprintf("%06.0f", $ms);
+    print strftime "%s.$ms\t", gmtime($s);
+    '
+}
+
+function timestamp() {
+  # precision note: two of these run about 30 ms apart (shell, forks, exec, ...)
+  echo | timestamp_lines
+}
+
+# Obtain the stderr lines relevant for timing
+#
+function filter_moses_stderr() {
+  gawk '/Start loading text phrase table/ ||
+        /Created input-output object/ ||
+        /took [0-9.]+ seconds/'
 }
 
 # Split path into variables
@@ -60,11 +88,11 @@ function lang_split() {
 eval $(ssh saxnot "$build_moses")
 # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
 
-wd=$TEST_FRAMEWORK/wd/$(date +%Y-%m-%d_%H-%M-%S)
-mkdir $wd
-echo >&2 "experiment wd is $wd..."
+wd_base=$TEST_FRAMEWORK/wd/$(date +%Y-%m-%d_%H-%M-%S)
+mkdir $wd_base
+echo >&2 "experiment wd is $wd_base..."
 
-#pushd $wd > /dev/null
+#pushd $wd_base > /dev/null
 tmp=/tmp/run-tradeoff-tests.$$
 mkdir $tmp
 pushd $tmp > /dev/null
@@ -83,24 +111,45 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   lang_split $lang_pair
   corpus=$(dirname $moses_ini)/corpus
 
+  wd=$wd_base/$setup/$lang_pair/$mini
+  mkdir -p $wd
+  mkdir -p $wd/profile
+
   # page cache the model data (HDD -> RAM)
   cache_data $moses_ini
 
   # run moses experiments and partially parse output, throw away the rest
+  moses_cmdline="$moses $MOSES_OPTS -f $moses_ini"
+
   # TODO: run this in docker!
-  $moses $MOSES_OPTS -f $moses_ini -i $corpus/test.src > test.hyp
+  timestamp > $wd/profile/timestamp.before_moses
+  # trick: cat an empty line (~ 20 ms search) first, to obtain decoding start time
+  echo > empty
+  cat empty $corpus/test.src | $moses_cmdline 2> moses.stderr | timestamp_lines > test.timestamped.hyp
+  timestamp > $wd/profile/timestamp.after_moses
+
+  # get translation (cut the times off): needs Bash for $'\t'
+  cut -d $'\t' -f 2- test.timestamped.hyp | awk 'NR>1' > test.hyp
+  # get timestamps for each sentence's arrival time
+  cut -d $'\t' -f 1 test.timestamped.hyp > $wd/profile/timestamp.sents_all
+  head -n 1 $wd/profile/timestamp.sents_all > $wd/profile/timestamp.before_decoding
+  awk 'NR>1' $wd/profile/timestamp.sents_all > $wd/profile/timestamp.sents
+
+  # get only moses timestamp debugging lines
+  filter_moses_stderr moses.stderr > $wd/profile/moses.timing.stderr
 
   # MultEval requires lowercased corpora
   tr '[:upper:]' '[:lower:]' < test.hyp > test.lc.hyp
   tr '[:upper:]' '[:lower:]' < $corpus/test.ref > test.lc.ref
 
-  $multeval eval --refs test.lc.ref --hyps-baseline test.lc.hyp --meteor.language $trg_lang > multeval.out
+  $multeval eval --refs test.lc.ref --hyps-baseline test.lc.hyp --meteor.language $trg_lang > $wd/multeval.out
 
-  wd_out=$wd/$setup/$lang_pair/$mini
-  mkdir -p $wd_out
+  # it doesn't cost us much to keep this in full...
+  gzip -c test.hyp > $wd/timestamped-test.hyp.gz
 
-  cp multeval.out $wd_out/
-  # TODO: write speed results
+  echo $gitrev > $wd/moses.rev
+  echo $descriptor > $wd/moses.build
+  echo $moses_cmdline > $wd/moses.cmdline
 done
 
 
@@ -109,4 +158,4 @@ done
 
 
 popd > /dev/null  # $tmp
-#popd > /dev/null  # $wd
+#popd > /dev/null  # $wd_base
