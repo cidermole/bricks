@@ -1,9 +1,10 @@
 #!/bin/bash
 
+# obtain paths ($TEST_FRAMEWORK, ...)
+. $(dirname $0)/env.sh
+
 branch=master
 rev=HEAD
-
-TEST_FRAMEWORK=/home/shared/mmt/testing
 
 BUILD_MOSES=$TEST_FRAMEWORK/bricks/scripts/build-moses.sh
 BUILD_MOSES_OPTS="-b $branch -a $TEST_FRAMEWORK/build -g /home/dmadl/gcc-4.9.2"
