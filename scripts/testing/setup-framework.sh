@@ -24,11 +24,10 @@ pushd $TEST_FRAMEWORK
 ln -sf /fs/lofn0/dmadl/mmt/bricks bricks
 
 # experiment model staging area
-# TODO: ln -sf /fs/crom0/mmt/testing/models models
-ln -sf /fs/lofn0/mmt/testing/models models
+ln -sf /fs/crom0/mmt/testing/models models
 
 # experiment working directory
-ln -sf /fs/lofn0/mmt/testing/wd wd
+ln -sf /fs/crom0/mmt/testing/wd wd
 
 # moses build staging area
 ln -sf /fs/saxnot0/dmadl/build/auto build
@@ -40,7 +39,7 @@ ln -sf /fs/saxnot0/dmadl/build/auto build
 # /home/shared/mmt/testing/build
 
 
-#umask 0027
+#umask 0007
 #newgrp mmt
 
 
