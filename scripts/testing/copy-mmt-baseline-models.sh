@@ -77,7 +77,7 @@ wmt-bench-cs-en
 "
 
 
-for setup in setups; do
+for setup in $setups; do
   # the main copying work: two directions each
   for id in 1 6; do
     ems_get_test_setup $setup $id
