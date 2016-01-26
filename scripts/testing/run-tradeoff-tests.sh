@@ -20,7 +20,7 @@ multeval=$TEST_FRAMEWORK/tools/multeval/multeval.sh
 
 function build_moses_remote() {
   # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
-  eval $("$build_moses saxnot")
+  eval $("$build_moses" saxnot)
 }
 
 # Fill the OS's disk page cache (hopefully creating equal starting conditions)
