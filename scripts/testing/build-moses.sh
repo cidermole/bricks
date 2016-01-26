@@ -10,7 +10,13 @@ BUILD_MOSES=$TEST_FRAMEWORK/bricks/scripts/build-moses.sh
 BUILD_MOSES_OPTS="-b $branch -a $TEST_FRAMEWORK/build -g /home/dmadl/gcc-4.9.2"
 
 # obtain the given / most recent revision number of the branch
-gitrev=$($BUILD_MOSES $BUILD_MOSES_OPTS -r $rev -v)
+gitrev=$($BUILD_MOSES $BUILD_MOSES_OPTS -r $rev -v; have_moses=$?)
+
+if [ $have_moses -ne 0 ]; then
+  echo >&2 "Building moses revision $gitrev ..."
+else
+  echo >&2 "Using existing build of moses revision $gitrev in staging area."
+fi
 
 # build the most recent revision in the staging directory
 moses=$($BUILD_MOSES $BUILD_MOSES_OPTS -r $gitrev)

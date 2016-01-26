@@ -128,6 +128,8 @@ pushd $tmp > /dev/null
 # /... (model files referred to by moses.${id}.ini)
 
 for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
+  echo >&2 "Running experiment $moses_ini..."
+
   path_split $moses_ini $TEST_FRAMEWORK/models setup lang_pair mini
   lang_split $lang_pair
   corpus=$(dirname $moses_ini)/corpus
@@ -136,13 +138,14 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   mkdir -p $wd
   mkdir -p $wd/profile
 
-  # page cache the model data (HDD -> RAM)
+  echo >&2 "  Loading model data into OS page cache..."
   cache_data $moses_ini
 
   # run moses experiments and partially parse output, throw away the rest
   moses_cmdline="$moses $MOSES_OPTS -f $moses_ini"
 
   # TODO: run this in docker!
+  echo >&2 "  Running moses decoder: $moses_cmdline"
   timestamp > $wd/profile/timestamp.before_moses
   # trick: cat an empty line (~ 20 ms search) first, to obtain decoding start time
   echo > empty
@@ -159,7 +162,9 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   lowercase < test.hyp > test.lc.hyp
   lowercase < $corpus/test.ref > test.lc.ref
 
+  echo >&2 "  Running multeval..."
   $multeval eval --refs test.lc.ref --hyps-baseline test.lc.hyp --meteor.language $trg_lang > $wd/multeval.out
+  echo >&2 "  Done."
 
   # it doesn't cost us much to keep this in full...
   gzip -c test.hyp > $wd/timestamped-test.hyp.gz
