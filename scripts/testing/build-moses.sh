@@ -3,10 +3,19 @@
 # Pass hostname as an argument to ssh build on that host.
 # Must then be invoked with an absolute path.
 
-if [ $# -gt 0 ]; then
-  build_host=$1
-  ssh $build_host "$0"
-  exit $?
+if [ "$(hostname)" != "hopper" ]; then
+  if [ $# -gt 0 ]; then
+    build_host=$1
+    ssh $build_host "$0"
+    exit $?
+  fi
+  EXTRA="-g /home/dmadl/gcc-4.9.2"
+
+else
+  # don't bother rebuilding moses for testing
+  gitrev=b0c208c
+  # but if we wanted to, we have a recent system GCC here.
+  EXTRA=""
 fi
 
 
@@ -18,11 +27,12 @@ branch=master
 rev=HEAD
 
 BUILD_MOSES=$TEST_FRAMEWORK/bricks/scripts/build-moses.sh
-BUILD_MOSES_OPTS="-b $branch -a $TEST_FRAMEWORK/build -g /home/dmadl/gcc-4.9.2"
+#BUILD_MOSES_OPTS="-b $branch -a $TEST_FRAMEWORK/build -g /home/dmadl/gcc-4.9.2"
+BUILD_MOSES_OPTS="-b $branch -a $TEST_FRAMEWORK/build $EXTRA"
 
+have_moses=1
 # obtain the given / most recent revision number of the branch
-gitrev=$($BUILD_MOSES $BUILD_MOSES_OPTS -r $rev -v)
-have_moses=$?
+[ -z ${gitrev+x} ] && gitrev=$($BUILD_MOSES $BUILD_MOSES_OPTS -r $rev -v) && have_moses=$?
 
 if [ $have_moses -ne 0 ]; then
   echo >&2 "Building moses revision $gitrev ..."
