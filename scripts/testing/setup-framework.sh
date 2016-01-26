@@ -26,17 +26,17 @@ pushd $TEST_FRAMEWORK
 
 # experiment model staging area
 mkdir -p /fs/crom0/mmt/testing/models
-ln -sf /fs/crom0/mmt/testing/models models
+[ ! -e models ] && ln -sf /fs/crom0/mmt/testing/models models
 
 # experiment working directory
 mkdir -p /fs/crom0/mmt/testing/wd
-ln -sf /fs/crom0/mmt/testing/wd wd
+[ ! -e wd ] && ln -sf /fs/crom0/mmt/testing/wd wd
 
 # moses build staging area
-ln -sf /fs/saxnot0/dmadl/build/auto build
+[ ! -e build ] && ln -sf /fs/saxnot0/dmadl/build/auto build
 
 # tools (multeval)
-ln -sf /home/shared/mmt/tools tools
+[ ! -e tools ] && ln -sf /home/shared/mmt/tools tools
 
 # /home/shared/mmt/testing/bricks
 # /home/shared/mmt/testing/models
