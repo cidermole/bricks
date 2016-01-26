@@ -115,7 +115,7 @@ build_moses_remote
 
 wd_base=$TEST_FRAMEWORK/wd/$(date +%Y-%m-%d_%H-%M-%S)
 mkdir $wd_base
-echo >&2 "experiment wd is $wd_base..."
+echo >&2 "experiment wd is $wd_base ..."
 
 #pushd $wd_base > /dev/null
 tmp=/tmp/run-tradeoff-tests.$$
@@ -171,7 +171,10 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   echo >&2 "  Done."
 
   # it doesn't cost us much to keep this in full...
-  gzip -c test.hyp > $wd/timestamped-test.hyp.gz
+  gzip -c test.hyp > $wd/test.hyp.gz
+
+  ln -s $corpus/test.src $wd/test.src
+  ln -s $corpus/test.ref $wd/test.ref
 
   echo $gitrev > $wd/moses.rev
   echo $descriptor > $wd/moses.build
