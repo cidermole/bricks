@@ -46,6 +46,23 @@ function timestamp() {
   echo | timestamp_lines
 }
 
+# Tease apart the timestamped hypothesis lines
+#
+function zip_timestamped_lines() {
+  stamped_lines=$1
+  test_hyp=$2
+  stamps_before=$3
+  stamps_sents=$4
+
+  # get translation (cut the times off): needs Bash for $'\t'
+  cut -d $'\t' -f 2- $stamped_lines | awk 'NR>1' > $test_hyp
+  # get timestamps for each sentence's arrival time
+  cut -d $'\t' -f 1 $stamped_lines > timestamp.sents_all
+
+  head -n 1 timestamp.sents_all > $stamps_before
+  awk 'NR>1' timestamp.sents_all > $stamps_sents
+}
+
 # Obtain the stderr lines relevant for timing
 #
 function filter_moses_stderr() {
@@ -132,16 +149,11 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   cat empty $corpus/test.src | $moses_cmdline 2> moses.stderr | timestamp_lines > test.timestamped.hyp
   timestamp > $wd/profile/timestamp.after_moses
 
-  # TODO: move into function, use vars
-  # get translation (cut the times off): needs Bash for $'\t'
-  cut -d $'\t' -f 2- test.timestamped.hyp | awk 'NR>1' > test.hyp
-  # get timestamps for each sentence's arrival time
-  cut -d $'\t' -f 1 test.timestamped.hyp > $wd/profile/timestamp.sents_all
-  head -n 1 $wd/profile/timestamp.sents_all > $wd/profile/timestamp.before_decoding
-  awk 'NR>1' $wd/profile/timestamp.sents_all > $wd/profile/timestamp.sents
+  # Separate into hypotheses and timestamps
+  zip_timestamped_lines test.timestamped.hyp test.hyp $wd/profile/timestamp.before_decoding $wd/profile/timestamp.sents
 
   # get only moses timestamp debugging lines
-  filter_moses_stderr moses.stderr > $wd/profile/moses.timing.stderr
+  filter_moses_stderr < moses.stderr > $wd/profile/moses.timing.stderr
 
   # MultEval requires lowercased corpora
   lowercase < test.hyp > test.lc.hyp
