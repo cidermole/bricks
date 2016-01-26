@@ -14,9 +14,14 @@ MOSES_OPTS="--search-algorithm 1 --cube-pruning-pop-limit 5000 -s 5000 -v 1"
 # obtain paths ($TEST_FRAMEWORK, ...)
 . $(dirname $0)/env.sh
 
-build_moses=$TEST_FRAMEWORK/bricks/scripts/testing/build-moses.sh
+build_moses=$(dirname $0)/build-moses.sh
 moses_ini_data=$TEST_FRAMEWORK/bricks/scripts/moses-ini-data.py
 multeval=$TEST_FRAMEWORK/tools/multeval/multeval.sh
+
+function build_moses_remote() {
+  # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
+  eval $("$build_moses saxnot")
+}
 
 # Fill the OS's disk page cache (hopefully creating equal starting conditions)
 #
@@ -105,8 +110,7 @@ function lowercase() {
   tr '[:upper:]' '[:lower:]'
 }
 
-# Compile recent moses
-eval $(ssh saxnot "$build_moses")
+build_moses_remote
 # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
 
 wd_base=$TEST_FRAMEWORK/wd/$(date +%Y-%m-%d_%H-%M-%S)

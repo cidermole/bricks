@@ -1,4 +1,15 @@
 #!/bin/bash
+#
+# Pass hostname as an argument to ssh build on that host.
+# Must then be invoked with an absolute path.
+
+if [ $# -gt 0 ]; then
+  build_host=$1
+  ssh $build_host "$0"
+  exit $?
+fi
+
+
 
 # obtain paths ($TEST_FRAMEWORK, ...)
 . $(dirname $0)/env.sh
