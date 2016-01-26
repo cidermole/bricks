@@ -181,3 +181,6 @@ done
 
 popd > /dev/null  # $tmp
 #popd > /dev/null  # $wd_base
+
+# clean up
+rm -rf $tmp
