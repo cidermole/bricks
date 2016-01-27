@@ -58,6 +58,7 @@ function zip_timestamped_lines() {
   test_hyp=$2
   stamps_before=$3
   stamps_sents=$4
+  decoding_time=$5
 
   # get translation (cut the times off): needs Bash for $'\t'
   cut -d $'\t' -f 2- $stamped_lines | awk 'NR>1' > $test_hyp
@@ -66,6 +67,11 @@ function zip_timestamped_lines() {
 
   head -n 1 timestamp.sents_all > $stamps_before
   awk 'NR>1' timestamp.sents_all > $stamps_sents
+
+  before=$(head -n 1 timestamp.sents_all)
+  last=$(tail -n 1 timestamp.sents_all)
+
+  awk "BEGIN { print $last - $before }" > $decoding_time
 }
 
 # Obtain the stderr lines relevant for timing
@@ -163,7 +169,7 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
     timestamp > $wd/profile/timestamp.after_moses
 
     # Separate into hypotheses and timestamps
-    zip_timestamped_lines test.timestamped.hyp test.hyp $wd/profile/timestamp.before_decoding $wd/profile/timestamp.sents
+    zip_timestamped_lines test.timestamped.hyp test.hyp $wd/profile/timestamp.before_decoding $wd/profile/timestamp.sents $wd/profile/decoding_time
 
     # get only moses timestamp debugging lines
     filter_moses_stderr < moses.stderr > $wd/profile/moses.timing.stderr
