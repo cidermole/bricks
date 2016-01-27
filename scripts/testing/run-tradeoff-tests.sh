@@ -7,9 +7,9 @@
 #
 # Author: David Madl <git@abanbytes.eu>
 
-#                              1: cube pruning,     pop limit, -s stack_size
-MOSES_OPTS="--search-algorithm 1 --cube-pruning-pop-limit 5000 -s 5000 -v 1"
-# MUST have verbosity level 1 for timestamps!                        -v verbosity
+#                              1: cube pruning,   -s stack_size
+MOSES_OPTS="--search-algorithm 1 -s 5000 -v 1"
+# MUST have verbosity level 1 for timestamps!      -v verbosity
 
 # obtain paths ($TEST_FRAMEWORK, ...)
 . $(dirname $0)/env.sh
@@ -132,53 +132,60 @@ pushd $tmp > /dev/null
 # /... (model files referred to by moses.${id}.ini)
 
 for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
-  echo >&2 "Running experiment $moses_ini..."
-
   path_split $moses_ini $TEST_FRAMEWORK/models setup lang_pair mini
   lang_split $lang_pair
   corpus=$(dirname $moses_ini)/corpus
 
-  wd=$wd_base/$setup/$lang_pair/$mini
-  mkdir -p $wd
-  mkdir -p $wd/profile
+  # for now, only run a single tuning run version of the experiments
+  if [ "$mini" != "moses.1.ini" -a "$mini" != "moses.6.ini" ]; then
+    continue
+  fi
+
+  echo >&2 "Running experiment $moses_ini..."
 
   echo >&2 "  Loading model data into OS page cache..."
   cache_data $moses_ini
 
-  # run moses experiments and partially parse output, throw away the rest
-  moses_cmdline="$moses $MOSES_OPTS -f $moses_ini"
+  for pop_limit in 100 200 500 1000 2000 5000; do
+    wd=$wd_base/$setup/$lang_pair/$mini/$pop_limit
+    mkdir -p $wd
+    mkdir -p $wd/profile
 
-  # TODO: run this in docker!
-  echo >&2 "  Running moses decoder: $moses_cmdline"
-  timestamp > $wd/profile/timestamp.before_moses
-  # trick: cat an empty line (~ 20 ms search) first, to obtain decoding start time
-  echo > empty
-  cat empty $corpus/test.src | $moses_cmdline 2> moses.stderr | timestamp_lines > test.timestamped.hyp
-  timestamp > $wd/profile/timestamp.after_moses
+    # run moses experiments and partially parse output, throw away the rest
+    moses_cmdline="$moses $MOSES_OPTS --cube-pruning-pop-limit $pop_limit -f $moses_ini"
 
-  # Separate into hypotheses and timestamps
-  zip_timestamped_lines test.timestamped.hyp test.hyp $wd/profile/timestamp.before_decoding $wd/profile/timestamp.sents
+    # TODO: run this in docker!
+    echo >&2 "  Running moses decoder: $moses_cmdline"
+    timestamp > $wd/profile/timestamp.before_moses
+    # trick: cat an empty line (~ 20 ms search) first, to obtain decoding start time
+    echo > empty
+    cat empty $corpus/test.src | $moses_cmdline 2> moses.stderr | timestamp_lines > test.timestamped.hyp
+    timestamp > $wd/profile/timestamp.after_moses
 
-  # get only moses timestamp debugging lines
-  filter_moses_stderr < moses.stderr > $wd/profile/moses.timing.stderr
+    # Separate into hypotheses and timestamps
+    zip_timestamped_lines test.timestamped.hyp test.hyp $wd/profile/timestamp.before_decoding $wd/profile/timestamp.sents
 
-  # MultEval requires lowercased corpora
-  lowercase < test.hyp > test.lc.hyp
-  lowercase < $corpus/test.ref > test.lc.ref
+    # get only moses timestamp debugging lines
+    filter_moses_stderr < moses.stderr > $wd/profile/moses.timing.stderr
 
-  echo >&2 "  Running multeval..."
-  $multeval eval --refs test.lc.ref --hyps-baseline test.lc.hyp --meteor.language $trg_lang > $wd/multeval.out
-  echo >&2 "  Done."
+    # MultEval requires lowercased corpora
+    lowercase < test.hyp > test.lc.hyp
+    lowercase < $corpus/test.ref > test.lc.ref
 
-  # it doesn't cost us much to keep this in full...
-  gzip -c test.hyp > $wd/test.hyp.gz
+    echo >&2 "  Running multeval..."
+    $multeval eval --refs test.lc.ref --hyps-baseline test.lc.hyp --meteor.language $trg_lang > $wd/multeval.out
+    echo >&2 "  Done."
 
-  ln -s $corpus/test.src $wd/test.src
-  ln -s $corpus/test.ref $wd/test.ref
+    # it doesn't cost us much to keep this in full...
+    gzip -c test.hyp > $wd/test.hyp.gz
 
-  echo $gitrev > $wd/moses.rev
-  echo $descriptor > $wd/moses.build
-  echo $moses_cmdline > $wd/moses.cmdline
+    ln -s $corpus/test.src $wd/test.src
+    ln -s $corpus/test.ref $wd/test.ref
+
+    echo $gitrev > $wd/moses.rev
+    echo $descriptor > $wd/moses.build
+    echo $moses_cmdline > $wd/moses.cmdline
+  done
 done
 
 
