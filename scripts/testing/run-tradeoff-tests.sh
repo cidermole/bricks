@@ -82,6 +82,13 @@ function filter_moses_stderr() {
         /took [0-9.]+ seconds/'
 }
 
+# Obtain decoding time per sentence
+#
+function filter_moses_sent_time() {
+  # print all except first line (which is 0.0 s empty profiling sentinel line)
+  perl -ne '/Translation took ([0-9.]+) seconds total/ && print "$1\n"' | awk 'NR>1'
+}
+
 # Split path into variables
 #
 # Usage: path_split "/home/david/path/to/somewhere" "/home/david" path1 path2 path3
@@ -169,10 +176,12 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
     timestamp > $wd/profile/timestamp.after_moses
 
     # Separate into hypotheses and timestamps
-    zip_timestamped_lines test.timestamped.hyp test.hyp $wd/profile/timestamp.before_decoding $wd/profile/timestamp.sents $wd/profile/decoding_time
+    zip_timestamped_lines test.timestamped.hyp test.hyp $wd/profile/timestamp.before_decoding $wd/profile/timestamp.sents $wd/profile/total_decoding_time
 
     # get only moses timestamp debugging lines
     filter_moses_stderr < moses.stderr > $wd/profile/moses.timing.stderr
+    # get decoding time per sentence
+    filter_moses_sent_time < $wd/profile/moses.timing.stderr > $wd/profile/sent_decoding_times
 
     # MultEval requires lowercased corpora
     lowercase < test.hyp > test.lc.hyp
