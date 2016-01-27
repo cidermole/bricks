@@ -14,6 +14,9 @@ MOSES_OPTS="--search-algorithm 1 -s 5000 -v 1"
 # obtain paths ($TEST_FRAMEWORK, ...)
 . $(dirname $0)/env.sh
 
+# utility functions (path_split, ...)
+. $(dirname $0)/utils.sh
+
 build_moses=$(dirname $0)/build-moses.sh
 moses_ini_data=$TEST_FRAMEWORK/bricks/scripts/moses-ini-data.py
 multeval=$TEST_FRAMEWORK/tools/multeval/multeval.sh
@@ -87,30 +90,6 @@ function filter_moses_stderr() {
 function filter_moses_sent_time() {
   # print all except first line (which is 0.0 s empty profiling sentinel line)
   perl -ne '/Translation took ([0-9.]+) seconds total/ && print "$1\n"' | awk 'NR>1'
-}
-
-# Split path into variables
-#
-# Usage: path_split "/home/david/path/to/somewhere" "/home/david" path1 path2 path3
-# ... sets path1=path, path2=to, path3=somewhere
-#
-function path_split() {
-  path=$1
-  base=$2
-  shift; shift
-
-  # cut the base off the front
-  path=$(echo $path | sed -e 's#^'$base'/##g')
-  # replace / with spaces
-  path_parts=$(echo $path | sed -e 's#/# #g')
-
-  # iterate over path parts and (remaining) arguments
-  for part in $path_parts; do
-    # set shifted varname argument variable
-    eval "$1=$part"
-    [ $# -eq 0 ] && break
-    shift
-  done
 }
 
 # Splits a language pair en-de into src_lang=en, trg_lang=de
