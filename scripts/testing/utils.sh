@@ -23,3 +23,15 @@ function path_split() {
     shift
   done
 }
+
+# sequence from 0 to nargs-1
+function argseq() { seq 0 $(($# - 1)); }
+
+# 0-based index retrieval of arguments, e.g. "index 0 a b c" -> "a"
+#
+function index() {
+  idx=$1;
+  # while [ $idx -gt 0 ]; do shift; done
+  for (( ; $idx >= 0; idx=$idx-1 )); do shift; done
+  echo "$1"
+}
