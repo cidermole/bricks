@@ -13,13 +13,25 @@
 import sys
 from collections import Counter
 
-vocab = Counter()
+# main program
+if __name__ == '__main__':
+    vocab = Counter()
 
-for line in sys.stdin:
-    vocab.update(line.split(' '))
+    for line in sys.stdin:
+        vocab.update(line.split(' '))
 
-sorted_entries = sorted(vocab.items(), key=lambda e: e[1], reverse=True)
+    sorted_entries = sorted(vocab.items(), key=lambda e: e[1], reverse=True)
 
-print('1\tUNK\t0')
-for id, (word, count) in enumerate(sorted_entries, start=2):
-    print('%d\t%s\t%d' % (id, word, count))
+    print('1\tUNK\t0')
+    for id, (word, count) in enumerate(sorted_entries, start=2):
+        print('%d\t%s\t%d' % (id, word, count))
+
+
+# related: parse the file format
+def parse_vocabulary(lines):
+    frequency, word2id = dict(), dict()
+    for line in lines:
+        (id, word, count) = line.split('\t')
+        frequency[word] = count
+        word2id[word] = id
+    return frequency, word2id
