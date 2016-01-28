@@ -540,6 +540,7 @@ class ConfigGenerator(object):
 def parseArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--setup', help='Setup config file included as $Setup.', default=None)
+    parser.add_argument('-v', '--verbose', help='Verbose mode for debugging.', action='store_true')
     parser.add_argument('config', help='Root Experiment config file.', nargs=1)
     return parser.parse_args()
 
@@ -551,7 +552,7 @@ if __name__ == '__main__':
 
     args = parseArguments()
 
-    logLevel = logging.ERROR
+    logLevel = logging.DEBUG if args.verbose else logging.ERROR
     gen = ConfigGenerator(args.config[0], args.setup, logLevel)
     gen.instantiate()
     gen.generateBricks(gen.experiment)
