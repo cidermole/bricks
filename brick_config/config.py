@@ -468,6 +468,8 @@ class Container(object):
 
         # resolve inheritance, without resolving References
         if 'extends' in self.keys():
+            if not isinstance(self['extends'], Container):
+                raise AssertionError("Can only extend non-scalar types in %s - are you missing the dollar sign?" % self.path)
             kopi = self['extends'].instantiate(parent, key)
             result = kopi
 
