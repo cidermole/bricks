@@ -73,8 +73,13 @@ for full_mini in $wd_base/*/*/*; do
     set term png;
     set output '$full_mini/time_bleu-vs-pop_limit.png';
     set datafile separator ';';
+    set key bottom right;
     set xlabel 'pop\_limit';
-    plot '$report' every ::1 using 1:2 with linespoints title 'decoding\_time', \
-         '$report' every ::1 using 1:3 with linespoints title 'bleu';
+    set ylabel 'decoding\_time [s]';
+    set y2label 'bleu [%]';
+    set y2tics;
+    set autoscale y2;
+    plot '$report' every ::1 using 1:2 with linespoints title 'decoding\_time' axes x1y1, \
+         '$report' every ::1 using 1:3 with linespoints title 'bleu' axes x1y2;
   "
 done
