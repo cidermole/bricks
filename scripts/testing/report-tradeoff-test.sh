@@ -39,16 +39,16 @@ rm -f $wd_base/decoding_times.txt
 
 for full_mini in $wd_base/*/*/*; do
   path_split $full_mini $wd_base setup lang_pair mini
-  [ -d $full_mini ] || continue  # skip non-directories (report files)
 
-  # redirect stdout to corresponding results file
-  log_path=$full_mini/../total_decoding_time-vs-pop_limit.$(basename $full_mini).txt
-  echo >&2 log_path=$log_path
-  exec > $log_path
+  report=$full_mini/total_decoding_time-vs-pop_limit.txt
+  # redirect stdout to corresponding report file
+  exec > $report
 
   echo "pop_limit;total_decoding_time;bleu;"
   for wd in $full_mini/*; do
     # iterate pop_limits tightly
+    [ -d $wd ] || continue  # skip non-directories (report files)
+
     path_split $wd $wd_base setup lang_pair mini pop_limit
     #echo >&2 "path_split -> $setup $lang_pair $mini $pop_limit"
 
@@ -68,4 +68,13 @@ for full_mini in $wd_base/*/*/*; do
   echo "$setup;$lang_pair;${total_decoding_times}${bleu_scores}" >> $wd_base/decoding_times.txt
 
   #rm /tmp/tmp.txt
+
+  gnuplot -e "
+    set term png;
+    set output '$full_mini/time_bleu-vs-pop_limit.png';
+    set datafile separator ';';
+    set xlabel 'pop\_limit';
+    plot '$report' every ::1 using 1:2 with linespoints title 'decoding\_time', \
+         '$report' every ::1 using 1:3 with linespoints title 'bleu';
+  "
 done
