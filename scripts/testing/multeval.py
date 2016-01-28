@@ -34,9 +34,10 @@ class MultEval:
         cmd = [self.multeval, 'eval', '--refs', self.reference, '--hyps-baseline'] + hyps + ['--meteor.language', self.targetLang]
         self.logger.debug("Running %s" % ' '.join(cmd))
         output = subprocess.check_output(cmd)
-        return self.parseMultEvalOutput(output)
+        return MultEval.parseOutput(output)
 
-    def parseMultEvalOutput(self, output):
+    @staticmethod
+    def parseOutput(output):
         # thanks for the parser, Barry
         for line in output.split("\n"):
             if not line.startswith("baseline"):
@@ -59,5 +60,4 @@ if __name__ == '__main__':
 baseline       28.0 (0.3/0.0/-)       32.7 (0.2/0.0/-)       52.3 (0.3/0.0/-)       95.7 (0.3/0.1/-)
 '''
 
-    me = MultEval()
-    print(me.parseMultEvalOutput(example_multeval_output))
+    print(MultEval.parseOutput(example_multeval_output))

@@ -8,6 +8,23 @@
 # utility functions (path_split, ...)
 . $(dirname $0)/utils.sh
 
+export PYTHONPATH=$(dirname $0)
+
+
+function parse_multeval() {
+  key=$1
+  multeval_out=$2
+  python -c "import multeval, sys; print(multeval.MultEval.parseOutput(open(sys.argv[1]).read()).$key)" $multeval_out
+}
+
+# Flip around the given column index, making it into a row.
+#
+function csv_flip_col() {
+  idx=$1
+  file=$2
+  cut -d ';' -f $idx $file | tr "\n" ';'
+}
+
 
 # usage: $0 $wd_base
 #
@@ -18,34 +35,37 @@ wd_base="$1"
 # wd=$wd_base/$setup/$lang_pair/$mini/$pop_limit  # (see run-tradeoff-tests.sh)
 path_split
 
-for wd in $wd_base/*/*/*/*; do
-  path_split $wd $wd_base setup lang_pair mini pop_limit
-  # will iterate pop_limits tightly, due to path construction.
+rm -f $wd_base/decoding_times.txt
 
-  total_decoding_time=$(cat $wd/profile/total_decoding_time)
-  echo "$pop_limit;$total_decoding_time"
-done
+for full_mini in $wd_base/*/*/*; do
+  path_split $full_mini $wd_base setup lang_pair mini
+  [ -d $full_mini ] || continue  # skip non-directories (report files)
 
-for mini in $wd_base/*/*/*; do
   # redirect stdout to corresponding results file
-  exec > $mini/total_decoding_time-vs-pop_limit.txt
+  log_path=$full_mini/../total_decoding_time-vs-pop_limit.$(basename $full_mini).txt
+  echo >&2 log_path=$log_path
+  exec > $log_path
 
-  echo "pop_limit;total_decoding_time;"
-  for wd in $mini/*; do
+  echo "pop_limit;total_decoding_time;bleu;"
+  for wd in $full_mini/*; do
     # iterate pop_limits tightly
     path_split $wd $wd_base setup lang_pair mini pop_limit
+    #echo >&2 "path_split -> $setup $lang_pair $mini $pop_limit"
 
     total_decoding_time=$(cat $wd/profile/total_decoding_time)
-    echo "$pop_limit;$total_decoding_time;"
-  done | sort -n | tee $mini/tmp.txt
+    bleu=$(parse_multeval bleu $wd/multeval.out)
 
-  pop_limits=$(cut -d ';' -f 1 $mini/tmp.txt | tr "\n" ';')
-  total_decoding_times=$(cut -d ';' -f 2 $mini/tmp.txt | tr "\n" ';')
+    echo "$pop_limit;$total_decoding_time;$bleu;"
+  done | sort -n | tee /tmp/tmp.txt
+
+  pop_limits=$(csv_flip_col 1 /tmp/tmp.txt)
+  total_decoding_times=$(csv_flip_col 2 /tmp/tmp.txt)
+  bleu_scores=$(csv_flip_col 3 /tmp/tmp.txt)
 
   # one-time pop_limit values (assumed to be the same across all)
   echo "$pop_limits" > $wd_base/pop_limits.txt
   # aggregate file
-  echo -n "$setup;$lang_pair;$total_decoding_times" >> $wd_base/decoding_times.txt
+  echo "$setup;$lang_pair;${total_decoding_times}${bleu_scores}" >> $wd_base/decoding_times.txt
 
-  rm $mini/tmp.txt
+  #rm /tmp/tmp.txt
 done
