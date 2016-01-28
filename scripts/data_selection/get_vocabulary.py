@@ -18,7 +18,7 @@ if __name__ == '__main__':
     vocab = Counter()
 
     for line in sys.stdin:
-        vocab.update(line.split(' '))
+        vocab.update(line.rstrip().split(' '))
 
     sorted_entries = sorted(vocab.items(), key=lambda e: e[1], reverse=True)
 
@@ -31,7 +31,7 @@ if __name__ == '__main__':
 def parse_vocabulary(lines):
     frequency, word2id = dict(), dict()
     for line in lines:
-        (id, word, count) = line.split('\t')
-        frequency[word] = count
-        word2id[word] = id
+        (id, word, count) = line.rstrip().split('\t')
+        frequency[word] = int(count)
+        word2id[word] = int(id)
     return frequency, word2id
