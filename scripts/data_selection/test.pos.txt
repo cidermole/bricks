@@ -1,0 +1,4 @@
+the|DT apple|NN is|VBZ a|DT fleshy|JJ fruit|NN from|IN the|DT apple|NN tree|NN .|.
+it|PRP is|VBZ in|IN the|DT species|NNS malus|JJ domestica|NNP in|IN the|DT rose|NN family|NN rosaceae|NN .|.
+the|DT apple|NN is|VBZ one|CD of|IN the|DT most|RBS grown|JJ tree|NN fruits|NNS .|.
+it|PRP is|VBZ grown|VBN in|IN orchards|NNS .|.

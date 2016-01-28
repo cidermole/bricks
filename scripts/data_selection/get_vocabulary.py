@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 #
 # Read tokenized corpus file and produce a vocabulary file with word counts,
 # sorted by descending word frequency. The most frequent words get the lowest IDs.
