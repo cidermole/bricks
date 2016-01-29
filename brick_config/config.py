@@ -1359,7 +1359,8 @@ class Reference(object):
         nup = 0
         path = object.__getattribute__(container, 'path')
         #current = self.findConfig(container)
-        parentConfig = self.findConfig(container)
+        #parentConfig = self.findConfig(container)
+        parentConfig = None
         current = container
         elements = list(self.elements)
         while current is not None:
@@ -1396,6 +1397,10 @@ class Reference(object):
                 if found:
                     break
             else:
+                if parentConfig is None:
+                    # find container from the level indicated by _._ -> start in the right container
+                    parentConfig = self.findConfig(current)
+
                 firstkey = elements[0]
                 try:
                     parentConfig.resolving
