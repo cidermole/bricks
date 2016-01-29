@@ -29,3 +29,7 @@ class BrickWiringTest(ConfigTest):
         print(Experiment.parts.Brick2.input.ins.data[0].path)
 
         self.assertEqual(Experiment.parts.Brick2.input.ins.data[0].path, 'Experiment.parts.Brick2.input.ins[0]')
+
+    def testPathParts(self):
+        Experiment = Brick(self.cfg.Experiment)
+        self.assertEqual(Experiment.parts.Brick2.sequence[0].pathParts(), ['Experiment', 'parts', 'Brick2', 'sequence', '0'])
