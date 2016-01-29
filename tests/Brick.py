@@ -22,4 +22,10 @@ class BrickWiringTest(ConfigTest):
         self.setupConfigFile("debug.cfg")
 
     def testInputDependencies(self):
-        brick = Brick(self.cfg.Experiment)
+        Experiment = Brick(self.cfg.Experiment)
+        #print(Experiment.parts.Brick2.input.ins[0].path)
+
+        print(Experiment.parts.Brick2.input.ins.data[0])
+        print(Experiment.parts.Brick2.input.ins.data[0].path)
+
+        self.assertEqual(Experiment.parts.Brick2.input.ins.data[0].path, 'Experiment.parts.Brick2.input.ins[0]')
