@@ -1237,6 +1237,7 @@ class Reference(object):
                         key = item[1]
                         if type(key) is Reference:
                             # recursive key resolution support (enables us to use references in indices, like configKey: $Part.definition[$i])
+                            assert(resolveRefs==True)
                             key = key.resolve2(container, resolveRefs)[0]
                         #rv = rv[key] if resolveRefs else rv.data[key]
                         if resolveRefs:
