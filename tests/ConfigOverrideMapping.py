@@ -104,11 +104,17 @@ class ReferenceInherit(ConfigTest):
 class NestedReference(ConfigTest):
     CONFIG = """
     Mapping: {
-      i: 1
+      other: 1
+      i: $other
       seq: [3, 4, 7]
       key: $seq[$i]
+      key2: $seq[2]
     }
     """
 
     def testReference(self):
         self.assertEqual(self.cfg.Mapping.key, 4)
+
+    def testReferenceElements(self):
+        #print(self.cfg.Mapping.data['key2'].elements)
+        self.assertEqual(self.cfg.Mapping.data['key2'].elements, ['seq', ('[', 2)])
