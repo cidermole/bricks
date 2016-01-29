@@ -26,7 +26,7 @@ class InheritOutputList(ConfigTest):
     CONFIG = """
     Base: {
       input:  { sources: [] }
-      output: { alignments: [ True | i: [0..$input.sources.length-1] ] }
+      output: { alignments: [ {val: $i} | i: [0..$input.sources.length-1] ] }
     }
 
     Derived: {
@@ -43,3 +43,10 @@ class InheritOutputList(ConfigTest):
 
         # a lazy Sequence has a dynamic length not determined at parse time
         # we will still parse the body once, but only statically (avoids parse errors).
+
+        self.assertEqual('Derived.output', Derived.output['alignments'].parent.path)
+        self.assertEqual('Derived.output.alignments', Derived.output['alignments'].path)
+
+        for i in range(2):
+            self.assertEqual('Derived.output.alignments[%d]' % i, Derived.output.alignments[i].path)
+            self.assertEqual(i, Derived.output.alignments[i].val)

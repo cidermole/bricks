@@ -1076,7 +1076,7 @@ class LazySequence(Sequence):
         mapping = self.mapping.instantiate(parent, 'mapping')  # key name is not the original one here ('i' usually), but that should not matter.
         object.__setattr__(result, 'dataItem', dataItem)
         object.__setattr__(result, 'mapping', mapping)
-        object.__setattr__(result, 'path', self.path)
+        object.__setattr__(result, 'path', makePath(parent.path, key))
         return result
 
     def __repr__(self):
@@ -1108,14 +1108,24 @@ class LazySequence(Sequence):
         # build the range
         object.__setattr__(self, 'data', [])
         object.__setattr__(self, 'comments', [])
-        for val in specification[key]:
+        for i, val in enumerate(specification[key]):
             # create context to evaluate the loop key reference $i
             context = Mapping(self.parent)
+            context.setPath(self.path)
             context[key] = val
 
             if type(listExpression) in [Expression, Reference]:
+                # untested
                 resolved = listExpression.resolveRecursions(context)
+            elif type(listExpression) in [Mapping, Config, Sequence, LazyRange, LazySequence]:
+                # really, parent should be 'self', not 'context', but then we need to set the key here.
+
+                #print('listExpression.instantiate(context, %d, %s=%r)' % (i, key, val))
+                resolved = listExpression.instantiate(context, '[%d]' % i)
+                #resolved[key] = val
+                #print('%r' % resolved)
             else:
+                # deepcopy??
                 resolved = listExpression
             self.append(resolved, '')
 
@@ -1138,7 +1148,7 @@ class LazyRange(Sequence):
 
     def instantiate(self, parent=None, key=None):
         result = LazyRange(self.rangeLimits.instantiate(self, 'rangeLimits'), parent)  # key name is not the original one here ('i' usually), but that should not matter.
-        object.__setattr__(result, 'path', self.path)
+        object.__setattr__(result, 'path', makePath(parent.path, key))
         return result
 
     def __repr__(self):
@@ -1890,10 +1900,15 @@ RCURLY, COMMA, [RBRACK] found %r"
         specification = Mapping(parent)
 
         if self.parseRange(rv, specification, parent, suffix):
-            return LazyRange(specification['rangeLimits'], parent)
+            rv = LazyRange(specification['rangeLimits'], parent)
+            rv.setPath(makePath(object.__getattribute__(parent, 'path'), suffix))
+            return rv
         elif self.parseListComprehension(rv, specification, parent, suffix):
             self.match(RBRACK)
-            return LazySequence(rv.data[0], specification, parent)
+            rv = LazySequence(rv.data[0], specification, parent)
+            rv.setPath(makePath(object.__getattribute__(parent, 'path'), suffix))
+            # TODO: DRY. is this possible below?
+            return rv
         else:
             self.match(RBRACK)
             return rv
