@@ -6,7 +6,7 @@ class MiniCfg(ConfigTest):
     def setUp(self):
         self.setupLogging()
         self.setupSearchPath()
-        self.setupConfigFile("examples/mini.cfg")
+        self.setupConfigFile("../examples/mini.cfg")
 
 
 class InheritMapping(MiniCfg):
@@ -62,7 +62,7 @@ class NoInstantiate(ConfigTest):
         self.setupLogging()
         self.setupSearchPath()
         # instantiate=False -> no inheritance, just the plain config file
-        self.setupConfigFile("examples/mini.cfg", instantiate=False)
+        self.setupConfigFile("../examples/mini.cfg", instantiate=False)
 
     def testConfigObjectData(self):
         """Why this? AttributeError: 'Config' object has no attribute 'data'"""
