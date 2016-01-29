@@ -188,23 +188,7 @@ class Brick(config.Mapping):
         if len(relativePath) in [5, 6] and relativePath[0:3] == ['_', '_', '_'] \
                 and relativePath[3] in ['output', 'input']:
             if brickOnly:
-                #assert(relativePath[3] != 'output')
-                # ^ this fails: code below is part of the horrible workaround for JointWordAligner.Split0
-
-                # it may be the case that the parent's input we reference
-                # has a dependency. We must inherit that dependency here.
-                assert(type(anyput) is config.Reference)
-                # TODO: magicInputBrick() should have gone this route.
-                parentInput = anyput.resolve2(container, resolveRefs=False)[0]
-                if type(parentInput) is not config.Reference or relativePath[3] != 'input':
-                    # parent input has no dependency
-                    return None
-                # one up: this Brick
-                # another two up: Brick parent
-                parent = Brick(container.parent.parent.parent)
-                parentPath = parent.referenceDependencyPath(parentInput, parent.input)
-                assert(relativePath[3] != 'output')
-                return os.path.join('..', parentPath) if parentPath is not None else None
+                return None
             else:
                 return os.path.join(*(['..'] + relativePath[3:]))
 
