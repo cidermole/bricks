@@ -259,10 +259,6 @@ class Brick(config.Mapping):
             for (k, aput) in anyput.data.iteritems():
                 resultList += self.linkPaths(inout, anyput, aput, k, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, k))
         elif isinstance(anyput, config.Sequence):
-            # for Lazy sequences, use this instead of anyput.data
-            if isinstance(anyput, config.LazySequence):
-                # TODO: why necessary??
-                anyput.determine()
             for (i, aput) in enumerate(anyput.data):
                 # anyput??
                 resultList += self.linkPaths(inout, anyput, aput, i, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, str(i)))
