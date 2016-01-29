@@ -383,6 +383,7 @@ class Container(object):
         @type parent: A L{Container} instance.
         """
         object.__setattr__(self, 'parent', parent)
+        object.__setattr__(self, 'path', '')
 
     def setPath(self, path):
         """
@@ -443,9 +444,9 @@ class Container(object):
 
     def pathParts(self):
         """
-        @return: our path, in str parts for either string keys, or numeric sequence keys.
+        @return: our path, in str parts for either string keys, or numeric sequence keys as str.
         """
-        return filter(None, re.split(r"[%s]+" % re.escape(".[]"), self.path))
+        return filter(None, re.split(r"[%s]+" % re.escape(".[]"), object.__getattribute__(self, 'path')))
 
     def instantiate(self, parent=None, key=None):
         """
@@ -1057,6 +1058,12 @@ class Reference(object):
         object.__setattr__(result, 'path', self.path)
         result.elements = copy.deepcopy(self.elements, memo)
         return result
+
+    def pathParts(self):
+        """
+        @return: our path, in str parts for either string keys, or numeric sequence keys as str.
+        """
+        return filter(None, re.split(r"[%s]+" % re.escape(".[]"), object.__getattribute__(self, 'path')))
 
     def resolveRecursions(self, container):
         """
