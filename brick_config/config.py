@@ -1665,7 +1665,8 @@ RCURLY, COMMA, [RBRACK] found %r"
                   TRUE, FALSE, NONE, BACKTICK, MINUS]:
             rv = self.parseScalar()
             if type(rv) in [Reference, Expression]:
-                object.__setattr__(rv, 'path', makePath(object.__getattribute__(parent, 'path'), suffix))
+                parentPath = object.__getattribute__(parent, 'path')
+                object.__setattr__(rv, 'path', makePath(parentPath, suffix))
         elif tt == LBRACK:
             rv = self.parseSequence(parent, suffix)
         elif tt in [LCURLY, AT]:
