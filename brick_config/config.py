@@ -1088,14 +1088,16 @@ class LazySequence(Sequence):
         return Sequence.SeqIter(self)
 
     def __getitem__(self, index):
-        # data attribute is defined dynamically
-        #if index == 'data':
-        #    return self.determine()
-        # somebody may ask for a different attribute than data, but data is still needed in Sequence.__getitem__()
         if not hasattr(self, 'data'):
             self.determine()
         # the rest is business as usual
         return Sequence.__getitem__(self, index)
+
+    def __getattr__(self, index):
+        if not hasattr(self, 'data'):
+            self.determine()
+        # the rest is business as usual
+        return Sequence.__getattribute__(self, index)
 
     def determine(self):
         """Determine the actual Sequence."""
@@ -1122,8 +1124,10 @@ class LazySequence(Sequence):
 
                 #print('listExpression.instantiate(context, %d, %s=%r)' % (i, key, val))
                 resolved = listExpression.instantiate(context, '[%d]' % i)
-                #resolved[key] = val
                 #print('%r' % resolved)
+
+                #resolved = listExpression.instantiate(self, '[%d]' % i)
+                #resolved[key] = val
             else:
                 # deepcopy??
                 resolved = listExpression
@@ -1161,8 +1165,8 @@ class LazyRange(Sequence):
 
     def __getitem__(self, index):
         # data attribute is defined dynamically
-        if index == 'data':
-            return self.determine()
+        if not hasattr(self, 'data'):
+            self.determine()
         # the rest is business as usual
         return Sequence.__getitem__(self, index)
 
@@ -1181,7 +1185,7 @@ class LazyRange(Sequence):
         elif type(end) is Reference:
             end = end.resolve(self.parent)
         else:
-            end = int(end.data[0])
+            end = int(end)
 
         # build the range
         object.__setattr__(self, 'data', [])
@@ -1404,7 +1408,7 @@ class Reference(object):
                 key = firstkey
                 try:
                     logger.debug("Trying to resolve key = %s on current = %s in container = %s", str(key), str(current.path), str(container.path))
-                    if type(key) is str and type(current) is Sequence:
+                    if type(key) is str and isinstance(current, Sequence):
                         # avoid attempting to resolve str keys on Sequence
                         # this would yield ConfigResolutionError from Sequence.__getitem__
                         rv = None

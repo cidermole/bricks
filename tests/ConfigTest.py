@@ -14,8 +14,8 @@ class ConfigTest(unittest.TestCase):
     CONFIG = ""
     # or: CONFIG = {'config1': """Brickname: { ... }"""}
 
-    def setupLogging(self):
-        logLevel = logging.INFO
+    def setupLogging(self, logLevel=logging.INFO):
+        logLevel = logLevel
         ch = logging.StreamHandler()
         config.logger.addHandler(ch)
         config.logger.setLevel(logLevel)

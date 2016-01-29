@@ -250,7 +250,7 @@ class Brick(config.Mapping):
                     path = self.referenceDependencyPath(anyput, mapping)
                     if path is not None:
                         dependencies.add(path)
-                elif type(anyput) is config.Sequence:
+                elif isinstance(anyput, config.Sequence):
                     # get dependencies from input Sequences
                     for val in anyput.data:
                         if type(val) is config.Reference:
@@ -274,7 +274,11 @@ class Brick(config.Mapping):
             # walk this Brick's *puts without resolving config keys
             for (k, aput) in anyput.data.iteritems():
                 resultList += self.linkPaths(inout, anyput, aput, k, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, k))
-        elif type(anyput) is config.Sequence:
+        elif isinstance(anyput, config.Sequence):
+            # for Lazy sequences, use this instead of anyput.data
+            if isinstance(anyput, config.LazySequence):
+                # TODO: why necessary??
+                anyput.determine()
             for (i, aput) in enumerate(anyput.data):
                 # anyput??
                 resultList += self.linkPaths(inout, anyput, aput, i, os.path.join(linkSourcePref, '..'), os.path.join(linkTarget, str(i)))
@@ -395,7 +399,7 @@ class TemplateBrick(Brick):
         for anyput in anyputs.keys():
             val = anyputs.data[anyput]
             resolved = anyputs[anyput]
-            if type(resolved) is config.Sequence:
+            if isinstance(resolved, config.Sequence):
                 # are we referencing something that is eventually a Sequence?
                 # In this case, our input brick must be the same for all Sequence entries.
                 if type(val) is config.Reference:
