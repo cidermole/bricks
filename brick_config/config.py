@@ -526,7 +526,7 @@ class Container(object):
                     outMapping = Mapping(parent)
                     outMapping.__setattr__('i', kTarget)
                     kopi = kopi.resolveRecursions(outMapping)
-            elif type(self.data[k]) in [Mapping, Config, Sequence]:
+            elif type(self.data[k]) in [Mapping, Config, Sequence, LazyRange, LazySequence]:
                 nextKey = '[%d]' % kTarget if type(result) is Sequence else kTarget
                 kopi = self.data[k].instantiate(result, nextKey)
                 if magicLoop:
@@ -882,6 +882,7 @@ class Config(Mapping):
         except Exception, e:
             raise ConfigError(str(e))
 
+
 class Sequence(Container):
     """
     This internal class implements a value which is a sequence of other values.
@@ -1033,6 +1034,153 @@ class Sequence(Container):
                 value.writeToStream(stream, indent, self)
             else:
                 self.writeValue(value, stream, indent)
+
+
+class LazySequence(Sequence):
+    """
+    A crossing between Reference and Sequence, this is a Sequence class that
+    has a length that is not determined at parse time.
+    """
+    def __init__(self, dataItem, mapping, parent=None):
+        """
+        Initialize an instance.
+
+        @param parent: The parent of this instance in the hierarchy.
+        @type parent: A L{Container} instance.
+
+        @param mapping: a Mapping containing a key: [range] specification
+        """
+        Container.__init__(self, parent)
+        # data and comments hold the single loop item (as opposed to regular Sequence, which has lists)
+        object.__setattr__(self, 'dataItem', dataItem)
+        object.__setattr__(self, 'mapping', mapping)
+
+        # lists that will be set by determine()
+        # DO NOT define 'data' here.
+        #object.__setattr__(self, 'data', [])
+        #object.__setattr__(self, 'comments', [])
+
+    def instantiate(self, parent=None, key=None):
+        result = LazySequence(None, None, parent)
+
+        dataItem = self.dataItem
+        #if type(dataItem) in [Reference, Expression]:
+        #    dataItem = copy.deepcopy(dataItem)
+        if type(dataItem) in [Mapping, Config, Sequence, LazyRange, LazySequence]:
+            dataItem = dataItem.instantiate(result, 0)  # key name is hardcoded 0 here, instead of true list index. That should not matter.
+            # (do paths get messed up? any path users?)
+            # could we pass a sentinel instead of the 0 here, to see where it propagates to?
+        else:
+            dataItem = copy.deepcopy(dataItem)
+
+        mapping = self.mapping.instantiate(parent, 'mapping')  # key name is not the original one here ('i' usually), but that should not matter.
+        object.__setattr__(result, 'dataItem', dataItem)
+        object.__setattr__(result, 'mapping', mapping)
+        object.__setattr__(result, 'path', self.path)
+        return result
+
+    def __repr__(self):
+        return 'LazySequence(%r, mapping=%r)' % (self.dataItem, self.mapping)
+
+    def __iter__(self):
+        if not hasattr(self, 'data'):
+            self.determine()
+        return Sequence.SeqIter(self)
+
+    def __getitem__(self, index):
+        # data attribute is defined dynamically
+        #if index == 'data':
+        #    return self.determine()
+        # somebody may ask for a different attribute than data, but data is still needed in Sequence.__getitem__()
+        if not hasattr(self, 'data'):
+            self.determine()
+        # the rest is business as usual
+        return Sequence.__getitem__(self, index)
+
+    def determine(self):
+        """Determine the actual Sequence."""
+        specification = object.__getattribute__(self, 'mapping')
+        listExpression = object.__getattribute__(self, 'dataItem')
+
+        assert(len(specification.keys()) == 1)
+        key = specification.keys()[0]
+
+        # build the range
+        object.__setattr__(self, 'data', [])
+        object.__setattr__(self, 'comments', [])
+        for val in specification[key]:
+            # create context to evaluate the loop key reference $i
+            context = Mapping(self.parent)
+            context[key] = val
+
+            if type(listExpression) in [Expression, Reference]:
+                resolved = listExpression.resolveRecursions(context)
+            else:
+                resolved = listExpression
+            self.append(resolved, '')
+
+        return object.__getattribute__(self, 'data')
+
+
+class LazyRange(Sequence):
+    """
+    A lazy range (Sequence of numbers) with a length that is not determined
+    at parse time.
+    """
+    def __init__(self, rangeLimits, parent=None):
+        Container.__init__(self, parent)
+        object.__setattr__(self, 'rangeLimits', rangeLimits)
+
+        # lists that will be set by determine()
+        # DO NOT define 'data' here.
+        #object.__setattr__(self, 'data', [])
+        #object.__setattr__(self, 'comments', [])
+
+    def instantiate(self, parent=None, key=None):
+        result = LazyRange(self.rangeLimits.instantiate(self, 'rangeLimits'), parent)  # key name is not the original one here ('i' usually), but that should not matter.
+        object.__setattr__(result, 'path', self.path)
+        return result
+
+    def __repr__(self):
+        return 'LazyRange(%r)' % self.rangeLimits
+
+    def __iter__(self):
+        if not hasattr(self, 'data'):
+            self.determine()
+        return Sequence.SeqIter(self)
+
+    def __getitem__(self, index):
+        # data attribute is defined dynamically
+        if index == 'data':
+            return self.determine()
+        # the rest is business as usual
+        return Sequence.__getitem__(self, index)
+
+    def determine(self):
+        """Determine the actual Sequence."""
+
+        rangeLimits = object.__getattribute__(self, 'rangeLimits')
+
+        # why are literal ints parsed into float?
+        begin = int(rangeLimits.data[0])
+        end = rangeLimits.data[1]
+
+        # The range end may be an Expression or Reference.
+        if type(end) is Expression:
+            end = end.evaluate(self.parent)
+        elif type(end) is Reference:
+            end = end.resolve(self.parent)
+        else:
+            end = int(end.data[0])
+
+        # build the range
+        object.__setattr__(self, 'data', [])
+        object.__setattr__(self, 'comments', [])
+        for i in range(begin, end + 1):
+            self.append(i, '')
+
+        return object.__getattribute__(self, 'data')
+
 
 class Reference(object):
     """
@@ -1739,16 +1887,18 @@ RCURLY, COMMA, [RBRACK] found %r"
                 continue
 
         # parse range syntax, e.g. [1..3] -> [1,2,3]
-        if self.parseRange(rv, parent, suffix):
-            return rv
-        elif self.parseListComprehension(rv, parent, suffix):
+        specification = Mapping(parent)
+
+        if self.parseRange(rv, specification, parent, suffix):
+            return LazyRange(specification['rangeLimits'], parent)
+        elif self.parseListComprehension(rv, specification, parent, suffix):
             self.match(RBRACK)
-            return rv
+            return LazySequence(rv.data[0], specification, parent)
         else:
             self.match(RBRACK)
             return rv
 
-    def parseListComprehension(self, rv, parent, suffix):
+    def parseListComprehension(self, rv, specification, parent, suffix):
         """
         Quick hack to add [$elems[$i] | i: [0..1]] style ranges which are expanded to a Sequence [$elems[0], $elems[1]]
         This only works with References, since there is no straightforward, intuitive way to partially evaluate an Expression
@@ -1758,62 +1908,37 @@ RCURLY, COMMA, [RBRACK] found %r"
         #  and (type(rv.data[0]) in [Expression, Reference])
         if not (len(rv.data) == 1 and self.token[0] == PIPE):
             return False
-        listExpression = rv.data[0]
 
-        specification = Mapping(parent)
         self.match(PIPE)
 
         # parse the key: [range] specification
         self.parseKeyValuePair(specification, allowRbrack=True)
-        assert(len(specification.keys()) == 1)
-        key = specification.keys()[0]
 
-        # build the range
-        object.__setattr__(rv, 'data', [])
-        object.__setattr__(rv, 'comments', [])
-        for val in specification[key]:
-            # create context to evaluate the loop key reference $i
-            context = Mapping(parent)
-            context[key] = val
-
-            if type(listExpression) in [Expression, Reference]:
-                resolved = listExpression.resolveRecursions(context)
-            else:
-                resolved = listExpression
-            rv.append(resolved, '')
         return True
 
-    def parseRange(self, rv, parent, suffix):
+    def parseRange(self, rv, specification, parent, suffix):
         """
         Quick hack to add [1..3] style ranges which are expanded to a Sequence [1,2,3]
         @return True if a range has been found, False if we should match an RBRACK.
         """
         # check for range syntax, e.g. [1..3] -> [1,2,3]
+        # why are literal ints parsed into float?
         if not (len(rv.data) == 1 and (type(rv.data[0]) in [int, float]) and self.token[0] == DOT):
             return False
 
-        # why are literal ints parsed into float?
-        begin = int(rv.data[0])
         self.token = (LBRACK, LBRACK) # fake begin range
         # parse the range end (for now, as Sequence...)
         end = self.parseSequence(parent, suffix)
+
+        rangeLimits = Sequence(parent)
+        rangeLimits.append(rv.data[0], '')
+        rangeLimits.append(end.data[0], '')
+        # add dummy key 'rangeLimits'
+        specification.addMapping('rangeLimits', rangeLimits, '')
+
         if len(end.data) != 1:
             raise ConfigFormatError("%s: expecting single number for end of range" % (self.location()))
 
-        # The range end may be an Expression or Reference. To resolve them at parsing time,
-        # it is necessary that those already be defined (and resolvable) *before* the range itself.
-        if type(end.data[0]) is Expression:
-            end = end.data[0].evaluate(parent)
-        elif type(end.data[0]) is Reference:
-            end = end.data[0].resolve(parent)
-        else:
-            end = int(end.data[0])
-
-        # build the range
-        object.__setattr__(rv, 'data', [])
-        object.__setattr__(rv, 'comments', [])
-        for i in range(begin, end + 1):
-            rv.append(i, '')
         return True
 
     def parseMapping(self, parent, suffix):
