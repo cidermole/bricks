@@ -1135,6 +1135,7 @@ class Reference(object):
         the given container. Attempts to resolve this reference in
         the container or any of its nodes, and returns the successful
         relative path.
+        returns e.g. ['_', ('.', '_'), ('.', 'input'), ('.', 'src'), ('[', 0)]
         """
         rv, nup = self.resolve2(container, resolveRefs=False)
         result = []
@@ -1143,6 +1144,7 @@ class Reference(object):
         result += [('.', self.elements[0])] if nup > 0 else [self.elements[0]]
 
         # e.g. ['_', ('.', '_'), ('.', '_'), ('.', 'input'), ('.', 'corpora'), ('$', $i)]
+        # e.g. ['seq', ('[', 2)] for $seq[2]
 
         # resolve nested references (e.g. $var[$i])
         for r in self.elements[1:]:
@@ -1154,15 +1156,19 @@ class Reference(object):
 
     def elements2path(self, elements):
         """
-        Turn an elements list  ['_', ('.', '_'), ('.', 'input'), ('.', 'src')]
-        to a path ['_', '_', 'input', 'src']
+        Turn an elements list  ['_', ('.', '_'), ('.', 'input'), ('.', 'src'), ('[', 0)]
+        to a path ['_', '_', 'input', 'src', '0']
         """
         result = list(elements[0:1])
         result += [str(e[1]) for e in elements[1:]]
         return result
 
     def relativePath(self, container):
-        """Relative path from self.path to """
+        """
+        Relative path from container.path to self.elements, i.e. where
+        this Reference is pointing to.
+        Returns a path like ['_', '_', 'input', 'src', '0']
+        """
 
         # this is not always true because of inheritance.
         #assert self.pathParts()[:-1] == container.pathParts(), "my hypothesis"
