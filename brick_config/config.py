@@ -1256,7 +1256,8 @@ class Reference(object):
                         key = item[1]
                         if type(key) is Reference:
                             # recursive key resolution support (enables us to use references in indices, like configKey: $Part.definition[$i])
-                            assert(resolveRefs==True)
+                            # TODO: this assert() does not work as it is caught below.
+                            #assert(resolveRefs==True)
                             key = key.resolve2(container, resolveRefs)[0]
                         #rv = rv[key] if resolveRefs else rv.data[key]
                         if resolveRefs:
@@ -1273,6 +1274,7 @@ class Reference(object):
                 except ConfigResolutionError:
                     raise
                 except:
+                    # TODO: explicitly specify the errors that can occur here.
                     logger.debug("Unable to resolve %r: %s", key, sys.exc_info()[1])
                     rv = None
                     pass
