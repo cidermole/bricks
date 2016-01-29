@@ -1695,7 +1695,7 @@ RCURLY, COMMA, [RBRACK] found %r"
         while tt in [STRING, WORD, NUMBER, LCURLY, LBRACK, LPAREN, DOLLAR,
                      TRUE, FALSE, NONE, BACKTICK, MINUS]:
             lsuffix = '[%d]' % len(rv)
-            value = self.parseValue(parent, lsuffix)
+            value = self.parseValue(rv, lsuffix)
             rv.append(value, comment)
             tt = self.token[0]
             comment = self.comment
