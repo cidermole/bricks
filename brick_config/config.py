@@ -1472,7 +1472,7 @@ class Expression(object):
     """
     This internal class implements a value which is obtained by evaluating an expression.
     """
-    def __init__(self, op, lhs, rhs):
+    def __init__(self, op, lhs, rhs=None):
         """
         Initialize an instance.
 
@@ -1556,8 +1556,15 @@ class Expression(object):
             rv = lhs * rhs
         elif op == SLASH:
             rv = lhs / rhs
-        else:
+        elif op == MOD:
             rv = lhs % rhs
+        elif hasattr(op, '__call__'):
+            if rhs is None:
+                rv = op(lhs)
+            else:
+                rv = op(lhs, rhs)
+        else:
+            raise ValueError("Invalid operator %r in Expression %s" % (op, object.__getattribute__(self, 'path')))
         return rv
 
 class ConfigReader(object):
@@ -2075,10 +2082,28 @@ RCURLY, COMMA, [RBRACK] found %r"
         @rtype: L{Reference}
         @raise ConfigFormatError: if a syntax error is found.
         """
-        word = self.match(WORD)
-        rv = Reference(type, word[1])
-        while self.token[0] in [DOT, LBRACK2]:
-            self.parseSuffix(rv)
+        tt = self.token[0]
+        if tt == WORD:
+            word = self.match(WORD)
+            rv = Reference(type, word[1])
+            while self.token[0] in [DOT, LBRACK2]:
+                self.parseSuffix(rv)
+        elif tt == LCURLY and type == DOLLAR:
+            self.match(LCURLY)
+            functionName = self.match(WORD)
+            self.match(LPAREN2)
+            #functionArg = self.parseScalar()
+            mapping = Mapping()
+            functionArg = self.parseValue(mapping, 'arg')
+            self.match(RPAREN)
+            self.match(RCURLY)
+
+            if functionName[0] != WORD:
+                raise ConfigFormatError("%s: expected function name word: %r" % (self.location(), functionName))
+            rv = Expression(eval(functionName[1]), functionArg)
+        else:
+            raise ConfigFormatError("%s: unexpected input: %r" %
+               (self.location(), self.token[1]))
         return rv
 
     def parseSuffix(self, ref):
