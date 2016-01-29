@@ -6,9 +6,20 @@ from bricks import Brick
 class BrickDependencyTest(ConfigTest):
     CONFIG = """
     Experiment: {
-      # a
+      input: {}
+      output: {}
     }
     """
+
+    def testInputDependencies(self):
+        brick = Brick(self.cfg.Experiment)
+
+
+class BrickWiringTest(ConfigTest):
+    def setUp(self):
+        self.setupLogging()
+        self.setupSearchPath()
+        self.setupConfigFile("debug.cfg")
 
     def testInputDependencies(self):
         brick = Brick(self.cfg.Experiment)

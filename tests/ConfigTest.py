@@ -21,10 +21,10 @@ class ConfigTest(unittest.TestCase):
         config.logger.setLevel(logLevel)
 
     def setupSearchPath(self):
-        appDir = os.path.dirname(os.path.realpath(__file__))
-        searchPath = os.path.join(*[appDir, '..', 'bricks'])
+        testDir = os.path.dirname(os.path.realpath(__file__))
+        searchPath = os.path.join(*[testDir, '..', 'bricks'])
         assert(os.path.exists(searchPath))
-        self.configSearchPath = config.ConfigSearchPath([searchPath])
+        self.configSearchPath = config.ConfigSearchPath([searchPath, testDir])
 
     def setupConfig(self):
         if type(self.CONFIG) is str:
