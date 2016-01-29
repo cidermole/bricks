@@ -1178,6 +1178,8 @@ class Reference(object):
         #
         # self.pathParts()[:-1] == ['WordAligner', 'output']
         # container.pathParts() == ['Experiment', 'parts', 'WordAligner0', 'output']
+        #
+        # TODO: I think this is a bug that needs fixing.
 
         return self.elements2path(self.relativeElements(container))
 
