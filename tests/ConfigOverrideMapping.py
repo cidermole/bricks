@@ -99,3 +99,16 @@ class ReferenceInherit(ConfigTest):
 
     def testReference(self):
         self.assertEqual(self.cfg.Derived.key, 'newValue')  # "Derived.key should get the referenced, inherited value from Derived.mapping.key"
+
+
+class NestedReference(ConfigTest):
+    CONFIG = """
+    Mapping: {
+      i: 1
+      seq: [3, 4, 7]
+      key: $seq[$i]
+    }
+    """
+
+    def testReference(self):
+        self.assertEqual(self.cfg.Mapping.key, 4)
