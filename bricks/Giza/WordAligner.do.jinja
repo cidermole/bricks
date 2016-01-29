@@ -33,7 +33,7 @@ if [ ! -e "$cachedAlignment" ]; then
 # handle output dependencies (create the alignment)
 
 (
-    # dependencies (input only)
+    # dependencies (output only)
     {%- for dependency in brick.dependencies('output') %}
         echo {{ dependency }}
     {%- endfor %}

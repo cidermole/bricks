@@ -16,19 +16,19 @@
 # we collect them onto one "redo-ifchange", to improve parallelism.
 
 {% block OverrideDependencies %}
+{%- for dependencyType in ['input', 'output'] %}
 (
-{% block Dependencies %}
-    # dependencies
-    {%- for dependency in brick.dependencies() %}
-        echo {{ dependency }}
-    {%- endfor %}
-{%- endblock %}
+    # {{ dependencyType }} dependencies
+{%- for dependency in brick.dependencies(dependencyType) %}
+    echo {{ dependency }}
+{%- endfor -%}
 
-{% if brick.dependencies() | length == 0 %}
-    # we have no dependencies
+{% if brick.dependencies(dependencyType) | length == 0 %}
+    # no {{ dependencyType }} dependencies
     true
-{% endif %}
+{%- endif %}
 ) | xargs redo-ifchange
+{% endfor %}
 {% endblock %}
 
 # Redirect stdout and stderr of coming commands to logfiles.

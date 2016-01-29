@@ -112,9 +112,7 @@ class Brick(config.Mapping):
         directory which will contain this Brick's data for the runner system.
         """
         # replace .parts: shortens "Experiment.parts.WordAligner0.parts.Giza12"
-        # into "Experiment.WordAligner0.Giza12"
-        configPath = self.path if configPath is None else configPath
-        #configPath = filter(None, re.split(r"[%s]+" % re.escape(".[]"), configPath))
+        # into "Experiment/WordAligner0/Giza12"
         configPath = self.pathParts()
         path = ['0']
         path += [part for part in configPath if part != "parts"]
@@ -190,6 +188,9 @@ class Brick(config.Mapping):
         if len(relativePath) in [5, 6] and relativePath[0:3] == ['_', '_', '_'] \
                 and relativePath[3] in ['output', 'input']:
             if brickOnly:
+                #assert(relativePath[3] != 'output')
+                # ^ this fails: code below is part of the horrible workaround for JointWordAligner.Split0
+
                 # it may be the case that the parent's input we reference
                 # has a dependency. We must inherit that dependency here.
                 assert(type(anyput) is config.Reference)
@@ -202,6 +203,7 @@ class Brick(config.Mapping):
                 # another two up: Brick parent
                 parent = Brick(container.parent.parent.parent)
                 parentPath = parent.referenceDependencyPath(parentInput, parent.input)
+                assert(relativePath[3] != 'output')
                 return os.path.join('..', parentPath) if parentPath is not None else None
             else:
                 return os.path.join(*(['..'] + relativePath[3:]))
@@ -226,11 +228,18 @@ class Brick(config.Mapping):
         (the latter for Bricks with parts).
         Used from 'brick.do.jinja' to obtain dependencies for 'redo'.
         """
-        dependencies = set()
+        allDependencies = list()
 
         types = ['input', 'output'] if depType is None else [depType]
 
+        # add input dependencies first:
+        # >> Inputs need to be run before the outputs. <<
+        #
+        # To run parallelized, all inputs may be run in parallel, but must be
+        # finished before the "outputs" (brick parts) are run.
+
         for inout in types:
+            dependencies = set()
             mapping = self[inout]
 
             # walk this Brick's anyputs without resolving config keys
@@ -249,7 +258,9 @@ class Brick(config.Mapping):
                             if path is not None:
                                 dependencies.add(path)
 
-        return list(sorted(list(dependencies)))
+            allDependencies += sorted(list(dependencies))
+
+        return allDependencies
 
     def linkPaths(self, inout, apParent, anyput, key, linkSourcePref, linkTarget):
         """
