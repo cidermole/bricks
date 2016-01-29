@@ -1103,13 +1103,19 @@ class Reference(object):
 
         @param container: The container to start from.
         @type container: L{Container}
-        @return: The closest enclosing configuration, or None.
+        @return: The closest enclosing configuration.
         @rtype: L{Config}
         """
         # find parent *Brick* instead of parent Config
         # TODO: inheritance. this is not a very nice way of testing for a Brick...
-        while (container is not None) and not (isinstance(container, Mapping) and (('input' in container and 'output' in container) or 'extends' in container)):
+        # we need to stop at root (Config) as well as at a Brick
+        while (container is not None) and not \
+                ((isinstance(container, Mapping) and (('input' in container and 'output' in container) or 'extends' in container)) \
+                or isinstance(container, Config)) \
+            :
             container = object.__getattribute__(container, 'parent')
+
+        assert container is not None, "findConfig() failed for Reference %s in container %s" % (str(self), container.path)
         return container
 
     def isRecursive(self):
@@ -1154,9 +1160,6 @@ class Reference(object):
         result = list(elements[0:1])
         result += [str(e[1]) for e in elements[1:]]
         return result
-
-    def path(self):
-        return self.elements2path(self.elements)
 
     def relativePath(self, container):
         return self.elements2path(self.relativeElements(container))
