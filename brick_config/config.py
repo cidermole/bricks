@@ -1162,6 +1162,17 @@ class Reference(object):
         return result
 
     def relativePath(self, container):
+        """Relative path from self.path to """
+
+        # this is not always true because of inheritance.
+        #assert self.pathParts()[:-1] == container.pathParts(), "my hypothesis"
+        #
+        # e.g. the WordAligner defined in Giza.cfg, extended in mini.cfg
+        # within Experiment.parts.WordAligner0 has:
+        #
+        # self.pathParts()[:-1] == ['WordAligner', 'output']
+        # container.pathParts() == ['Experiment', 'parts', 'WordAligner0', 'output']
+
         return self.elements2path(self.relativeElements(container))
 
     def resolve2(self, container, resolveRefs=True):
