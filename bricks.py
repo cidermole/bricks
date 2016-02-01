@@ -104,7 +104,8 @@ class Brick(config.Mapping):
         object.__setattr__(self, 'resolving', set())
 
         # rudimentarily assert that this config level is indeed a Brick
-        assert('input' in self.data and 'output' in self.data)
+        if not ('input' in self.data and 'output' in self.data):
+            raise ValueError("Brick %s is missing an input: or output: block" % self.path)
 
     def filesystemPath(self, configPath=None):
         """
