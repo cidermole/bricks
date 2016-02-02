@@ -10,6 +10,10 @@
 
 # note: -alignment has no effect here, as we do not yet symmetrize.
 
+{%- if brick.finalAlignmentModel is number %}
+echo >&2 "note: word aligner using non-default --final-alignment-model={{ brick.finalAlignmentModel }}"
+{%- endif %}
+
 {{ brick.MOSES }}/scripts/training/train-model.perl \
 {% block AddTrainingOptions %}{% endblock %}
 {%- if brick.finalAlignmentModel is number %}
