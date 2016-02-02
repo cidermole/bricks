@@ -6,7 +6,7 @@
 # This file contains --nsel lines of selection first, and then the remaining
 # line indices afterwards (as produced naturally by ranking).
 #
-# Line indices refer to a mixture corpus file which has the hidden corpus
+# Line indices refer to a mixture corpus file which has the hidden corpus C_in
 # as its first --nsel lines.
 #
 
@@ -17,6 +17,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Evaluate training data selection. Expects the entire corpus as a 1-based permutation, with the first nsel lines selected for training.')
 parser.add_argument('--nsel', type=int, help='number of sentences that have been selected')
+parser.add_argument('--nin', type=int, help='number of C_in sentences "hidden" in the first part of the mixture')
 args = parser.parse_args()
 
 
@@ -30,14 +31,14 @@ for iline, line in enumerate(sys.stdin):
 
     if iline < args.nsel:
         # lines that have been selected
-        if i < args.nsel:
+        if i < args.nin:
             # should it have been selected?
             tp += 1
         else:
             fp += 1
     else:
         # lines that remain (not selected)
-        if i < args.nsel:
+        if i < args.nin:
             # should it have been selected?
             fn += 1
         else:
@@ -47,5 +48,5 @@ for iline, line in enumerate(sys.stdin):
 prec, rec = tp / (tp + fp), tp / (tp + fn)
 fscore = 2 * prec * rec / (prec + rec)
 
-sys.stderr.write('pseudo-precision pseudo-recall pseudo-f1\n')
+sys.stderr.write('precision recall f1\n')
 print('%.3lf %.3lf %.3lf' % (prec, rec, fscore))
