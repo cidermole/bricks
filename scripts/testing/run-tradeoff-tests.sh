@@ -188,7 +188,7 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
       # run moses experiments and partially parse output, throw away the rest
       moses_cmdline="$moses $MOSES_OPTS --cube-pruning-pop-limit $pop_limit --stack $stack_size -f $moses_ini"
 
-      run_experiment $moses_cmdline $wd $corpus $trg_lang
+      run_experiment "$moses_cmdline" $wd $corpus $trg_lang
     done
   done
 done
