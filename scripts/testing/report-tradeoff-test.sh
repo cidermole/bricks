@@ -54,9 +54,9 @@ for full_mini in $wd_base/*/*/*; do
     bleu=$(parse_multeval bleu $wd/multeval.out)
 
     echo "$stack_size;$pop_limit;$total_decoding_time;$bleu;"
-  done | sort -n | awk -F ";" '{ if($2 == 1000) print $0; }' | tee /tmp/tmp.txt
+  done | sort -n | awk -F ";" '{ if($2 == 10) print $0; }' | tee /tmp/tmp.txt
 
-  # here & now only reports pop_limit 1000
+  # here & now only reports pop_limit 100
   stack_sizes=$(csv_flip_col 1 < /tmp/tmp.txt)
   total_decoding_times=$(csv_flip_col 3 < /tmp/tmp.txt)
   bleu_scores=$(csv_flip_col 4 < /tmp/tmp.txt)
@@ -64,7 +64,7 @@ for full_mini in $wd_base/*/*/*; do
   # one-time stack_size values (assumed to be the same across all)
   echo "$stack_sizes" > $wd_base/stack_sizes.txt
   # aggregate file
-  echo "$setup;$lang_pair;${total_decoding_times}${bleu_scores}" >> $wd_base/decoding_times.txt
+  echo "$setup;$lang_pair;$mini;${total_decoding_times}${bleu_scores}" >> $wd_base/decoding_times.txt
 
   #rm /tmp/tmp.txt
 
