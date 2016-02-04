@@ -14,18 +14,19 @@ import logging
 from moses_ini import MosesIniParser, Feature, overrides
 
 
-def parseArguments():
+def argumentParser():
     parser = argparse.ArgumentParser(description='Copies a moses.ini file to a new location while ' +
                                                  'also copying the referenced data files.')
+    addArguments(parser)
+    return parser
+
+
+def addArguments(parser):
     parser.add_argument('-f', '--input', dest='source_moses_ini', help='moses.ini in its original environment', nargs='?', default='/dev/stdin')
     parser.add_argument('-o', '--output', dest='target_moses_ini', help='target path to moses.ini or directory to store moses.ini', nargs='?', default='/dev/stdout')
     parser.add_argument('output_data_path', help='target path to a directory to store data files')
     parser.add_argument('-n', '--no-overwrite-data', dest='noOverwrite', help='do not overwrite data files if they already exist', action='store_true')
     parser.add_argument('-d', '--dry-run', dest='dryRun', help='do not actually copy data files, just print summary', action='store_true')
-
-    args = parser.parse_args()
-
-    return args
 
 
 def failMessage(message):
@@ -48,9 +49,9 @@ def fixPaths(args):
 
 
 class MosesIniConverter(MosesIniParser):
-    def __init__(self, mosesIni, targetDataPath, logger=None):
+    def __init__(self, mosesIni, args, logger=None):
         super(MosesIniConverter, self).__init__(mosesIni, logger)
-        self.targetDataPath = targetDataPath
+        self.targetDataPath = args.output_data_path
         self.convertedIniLines = []
 
     @overrides(MosesIniParser)
@@ -88,14 +89,14 @@ class MosesIniConverter(MosesIniParser):
         return '\n'.join(self.convertedIniLines)
 
 
-def main(mosesIniConverterClass):
-    args = parseArguments()
+def main(mosesIniConverterClass, argumentParser):
+    args = argumentParser.parse_args()
     args = fixPaths(args)
 
     logging.basicConfig(level=logging.INFO)
 
     with open(args.source_moses_ini) as fin:
-        converter = mosesIniConverterClass(fin, args.output_data_path, logger=logging.getLogger())
+        converter = mosesIniConverterClass(fin, args, logger=logging.getLogger())
         result = converter.convert()
 
     with open(args.target_moses_ini, 'w') as fo:
@@ -107,4 +108,4 @@ def main(mosesIniConverterClass):
 
 
 if __name__ == '__main__':
-    main(MosesIniConverter)
+    main(MosesIniConverter, argumentParser())
