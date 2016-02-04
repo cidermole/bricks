@@ -7,8 +7,8 @@
 #
 # Author: David Madl <git@abanbytes.eu>
 
-#                              1: cube pruning,   -s stack_size
-MOSES_OPTS="--search-algorithm 1 -s 5000 -v 1"
+#                              1: cube pruning
+MOSES_OPTS="--search-algorithm 1 -v 1"
 # MUST have verbosity level 1 for timestamps!      -v verbosity
 
 # obtain paths ($TEST_FRAMEWORK, ...)
