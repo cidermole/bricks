@@ -57,7 +57,7 @@ for full_mini in $wd_base/*/*/*; do
   done | sort -n | awk -F ";" '{ if($2 == 1000) print $0; }' | tee /tmp/tmp.txt
 
   # here & now only reports pop_limit 1000
-  stack_sizes=$(csv_flip_col 2 < /tmp/tmp.txt)
+  stack_sizes=$(csv_flip_col 1 < /tmp/tmp.txt)
   total_decoding_times=$(csv_flip_col 3 < /tmp/tmp.txt)
   bleu_scores=$(csv_flip_col 4 < /tmp/tmp.txt)
 
