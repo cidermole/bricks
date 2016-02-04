@@ -32,7 +32,11 @@ function cache_model_data() {
   ini=$1
   for f in $($moses_ini_data -f $ini); do
     echo >&2 "    Loading $(basename $f) ..."
-    cat $f > /dev/null
+
+    # handle directories
+    [ -d $f ] && f="$f/*"
+
+    cat "$f" > /dev/null
   done
 }
 
@@ -168,6 +172,10 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   path_split $moses_ini $TEST_FRAMEWORK/models setup lang_pair mini
   lang_split $lang_pair
   corpus=$(dirname $moses_ini)/corpus
+
+  if [ "$lang_pair" != "de-en" ]; then
+    continue
+  fi
 
   ## for now, only run a single tuning run version of the experiments
   #if [ "$mini" != "moses.1.ini" -a "$mini" != "moses.6.ini" ]; then
