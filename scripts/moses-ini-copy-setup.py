@@ -27,6 +27,7 @@ def addArguments(parser):
     parser.add_argument('output_data_path', help='target path to a directory to store data files')
     parser.add_argument('-n', '--no-overwrite-data', dest='noOverwrite', help='do not overwrite data files if they already exist', action='store_true')
     parser.add_argument('-d', '--dry-run', dest='dryRun', help='do not actually copy data files, just print summary', action='store_true')
+    # -t, -l used in moses-ini-change-table.py
 
 
 def failMessage(message):

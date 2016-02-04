@@ -25,6 +25,7 @@ function model_dir() {
 }
 
 moses_ini_copy_setup=$TEST_FRAMEWORK/bricks/scripts/moses-ini-copy-setup.py
+moses_ini_change_table=$TEST_FRAMEWORK/bricks/scripts/moses-ini-change-table.py
 
 ####
 
@@ -105,5 +106,11 @@ for setup in $setups; do
 
     # Adapt moses.ini, but do not copy data again, using --no-overwrite-data
     $moses_ini_copy_setup -f $moses_ini $md -o $md/moses.${id}.ini --no-overwrite-data "$@"
+
+    # Alternative phrase tables, compact LR
+    for ptname in PhraseDictionaryCompact ProbingPT; do
+      # do not copy data again, but do create the binary model formats for PT, LR
+      $moses_ini_change_table -t $ptname -l -f $moses_ini $md -o $md/moses.${id}.${ptname}.ini --no-overwrite-data "$@"
+    done
   done
 done
