@@ -21,8 +21,7 @@ function parse_multeval() {
 #
 function csv_flip_col() {
   idx=$1
-  file=$2
-  cut -d ';' -f $idx $file | tr "\n" ';'
+  cut -d ';' -f $idx | tr "\n" ';'
 }
 
 
@@ -32,8 +31,7 @@ function csv_flip_col() {
 
 wd_base="$1"
 
-# wd=$wd_base/$setup/$lang_pair/$mini/$pop_limit  # (see run-tradeoff-tests.sh)
-path_split
+# wd=$wd_base/$setup/$lang_pair/$mini/$pop_limit/$stack_size  # (see run-tradeoff-tests.sh)
 
 rm -f $wd_base/decoding_times.txt
 
@@ -44,23 +42,23 @@ for full_mini in $wd_base/*/*/*; do
   # redirect stdout to corresponding report file
   exec > $report
 
-  echo "pop_limit;total_decoding_time;bleu;"
-  for wd in $full_mini/*; do
+  echo "pop_limit;stack_size;total_decoding_time;bleu;"
+  for wd in $full_mini/*/*; do
     # iterate pop_limits tightly
     [ -d $wd ] || continue  # skip non-directories (report files)
 
-    path_split $wd $wd_base setup lang_pair mini pop_limit
+    path_split $wd $wd_base setup lang_pair mini pop_limit stack_size
     #echo >&2 "path_split -> $setup $lang_pair $mini $pop_limit"
 
     total_decoding_time=$(cat $wd/profile/total_decoding_time)
     bleu=$(parse_multeval bleu $wd/multeval.out)
 
-    echo "$pop_limit;$total_decoding_time;$bleu;"
-  done | sort -n | tee /tmp/tmp.txt
+    echo "$pop_limit;$stack_size;$total_decoding_time;$bleu;"
+  done | sort -n | awk -F ";" '{ if($2 == 2000) print $0; }' | tee /tmp/tmp.txt
 
-  pop_limits=$(csv_flip_col 1 /tmp/tmp.txt)
-  total_decoding_times=$(csv_flip_col 2 /tmp/tmp.txt)
-  bleu_scores=$(csv_flip_col 3 /tmp/tmp.txt)
+  pop_limits=$(csv_flip_col 1 < /tmp/tmp.txt)
+  total_decoding_times=$(csv_flip_col 2 < /tmp/tmp.txt)
+  bleu_scores=$(csv_flip_col 3 < /tmp/tmp.txt)
 
   # one-time pop_limit values (assumed to be the same across all)
   echo "$pop_limits" > $wd_base/pop_limits.txt

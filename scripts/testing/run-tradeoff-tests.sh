@@ -179,15 +179,17 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   echo >&2 "  Loading model data into OS page cache..."
   cache_model_data $moses_ini
 
-  for pop_limit in 100 200 500 1000 2000 5000; do
-    wd=$wd_base/$setup/$lang_pair/$mini/$pop_limit
-    mkdir -p $wd
-    mkdir -p $wd/profile
+  for pop_limit in 200 1000 5000; do
+    for stack_size in 100 500 2000 10000; do
+      wd=$wd_base/$setup/$lang_pair/$mini/$pop_limit/$stack_size
+      mkdir -p $wd
+      mkdir -p $wd/profile
 
-    # run moses experiments and partially parse output, throw away the rest
-    moses_cmdline="$moses $MOSES_OPTS --cube-pruning-pop-limit $pop_limit -f $moses_ini"
+      # run moses experiments and partially parse output, throw away the rest
+      moses_cmdline="$moses $MOSES_OPTS --cube-pruning-pop-limit $pop_limit --stack $stack_size -f $moses_ini"
 
-    run_experiment $moses_cmdline $wd $corpus $trg_lang
+      run_experiment $moses_cmdline $wd $corpus $trg_lang
+    done
   done
 done
 
