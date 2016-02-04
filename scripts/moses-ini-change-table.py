@@ -45,11 +45,11 @@ class ConvertingFeature(Feature):
         fs.makedirs(targetBase)
 
         if not dryRun:
-            self.copyStub(targetPath)
+            self.copyStub(targetPath, not noOverwrite)
         else:
             self.logger.info('convert(%s, %s)' % (self.sourceDataPath, targetPath))
 
-    def copyStub(self, targetBase):
+    def copyStub(self, targetBase, noOverwrite):
         pass
 
 
@@ -60,10 +60,11 @@ class ProbingPTFeature(ConvertingFeature):
         self.targetBaseName = ''
 
     @overrides(ConvertingFeature)
-    def copyStub(self, targetPath):
+    def copyStub(self, targetPath, overwrite):
         num_scores = 4
         os.makedirs(targetPath)
-        subprocess.check_call(['CreateProbingPT', self.sourceDataPath, targetPath, str(num_scores)])
+        if not os.path.exists(os.path.join(targetPath, 'binfile.dat')) or overwrite:
+            subprocess.check_call(['CreateProbingPT', self.sourceDataPath, targetPath, str(num_scores)])
 
 class CompactPTFeature(ConvertingFeature):
     def __init__(self, _, uniqueName, sourceDataPath, logger=None):
@@ -72,8 +73,9 @@ class CompactPTFeature(ConvertingFeature):
         self.targetBaseName = 'phrase-table'
 
     @overrides(ConvertingFeature)
-    def copyStub(self, targetPath):
-        subprocess.check_call(['processPhraseTableMin', '-in', self.sourceDataPath, '-out', targetPath])
+    def copyStub(self, targetPath, overwrite):
+        if not os.path.exists('%s.minphr' % targetPath) or overwrite:
+            subprocess.check_call(['processPhraseTableMin', '-in', self.sourceDataPath, '-out', targetPath])
 
 class CompactLRFeature(ConvertingFeature):
     def __init__(self, _, uniqueName, sourceDataPath, logger=None):
@@ -82,8 +84,9 @@ class CompactLRFeature(ConvertingFeature):
         self.targetBaseName = 'reordering-table'
 
     @overrides(ConvertingFeature)
-    def copyStub(self, targetPath):
-        subprocess.check_call(['processLexicalTableMin', '-in', self.sourceDataPath, '-out', targetPath])
+    def copyStub(self, targetPath, overwrite):
+        if not os.path.exists('%s.minlexr' % targetPath) or overwrite:
+            subprocess.check_call(['processLexicalTableMin', '-in', self.sourceDataPath, '-out', targetPath])
 
 
 

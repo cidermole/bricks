@@ -89,8 +89,15 @@ for setup in $setups; do
     md=$(model_dir)
     mkdir -p $md
 
+    #####
     # Copy models and adapt moses.ini
     $moses_ini_copy_setup -f $moses_ini $md -o $md/moses.${id}.ini "$@"
+
+    # Alternative phrase tables, compact LR
+    for ptname in PhraseDictionaryCompact ProbingPT; do
+      $moses_ini_change_table -t $ptname -l -f $moses_ini $md -o $md/moses.${id}.${ptname}.ini "$@"
+    done
+    #####
 
     # Copy test corpus
     mkdir -p $md/corpus
@@ -104,13 +111,14 @@ for setup in $setups; do
     ems_get_test_setup $setup $id
     md=$(model_dir)
 
+    #####
     # Adapt moses.ini, but do not copy data again, using --no-overwrite-data
     $moses_ini_copy_setup -f $moses_ini $md -o $md/moses.${id}.ini --no-overwrite-data "$@"
 
     # Alternative phrase tables, compact LR
     for ptname in PhraseDictionaryCompact ProbingPT; do
-      # do not copy data again, but do create the binary model formats for PT, LR
       $moses_ini_change_table -t $ptname -l -f $moses_ini $md -o $md/moses.${id}.${ptname}.ini --no-overwrite-data "$@"
     done
+    #####
   done
 done
