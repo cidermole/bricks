@@ -8,7 +8,7 @@
 # Author: David Madl <git@abanbytes.eu>
 
 #                              1: cube pruning
-MOSES_OPTS="--search-algorithm 1 -v 1 --threads 1"
+MOSES_OPTS="--search-algorithm 1 -v 1 --threads 8"
 # MUST have verbosity level 1 for timestamps!      -v verbosity
 
 # obtain paths ($TEST_FRAMEWORK, ...)
@@ -179,16 +179,18 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   echo >&2 "  Loading model data into OS page cache..."
   cache_model_data $moses_ini
 
-  for pop_limit in 10 20 50 100; do
-    for stack_size in 2 5 10 20 50; do
-      wd=$wd_base/$setup/$lang_pair/$mini/$pop_limit/$stack_size
-      mkdir -p $wd
-      mkdir -p $wd/profile
+  for distortion_limit in 6; do
+    for pop_limit in 10 20 50 100; do
+      for stack_size in 2 5 10 20 50; do
+        wd=$wd_base/$setup/$lang_pair/$mini/$distortion_limit/$pop_limit/$stack_size
+        mkdir -p $wd
+        mkdir -p $wd/profile
 
-      # run moses experiments and partially parse output, throw away the rest
-      moses_cmdline="$moses $MOSES_OPTS --cube-pruning-pop-limit $pop_limit --stack $stack_size -f $moses_ini"
+        # run moses experiments and partially parse output, throw away the rest
+        moses_cmdline="$moses $MOSES_OPTS --cube-pruning-pop-limit $pop_limit --stack $stack_size --distortion-limit $distortion_limit -f $moses_ini"
 
-      run_experiment "$moses_cmdline" $wd $corpus $trg_lang
+        run_experiment "$moses_cmdline" $wd $corpus $trg_lang
+      done
     done
   done
 done

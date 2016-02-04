@@ -43,23 +43,22 @@ for full_mini in $wd_base/*/*/*; do
   exec > $report
 
   echo "pop_limit;stack_size;total_decoding_time;bleu;"
-  for wd in $full_mini/*/*; do
+  for wd in $full_mini/*/*/*; do
     # iterate stack_sizes tightly
     [ -d $wd ] || continue  # skip non-directories (report files)
 
-    path_split $wd $wd_base setup lang_pair mini pop_limit stack_size
-    #echo >&2 "path_split -> $setup $lang_pair $mini $pop_limit"
+    path_split $wd $wd_base setup lang_pair mini distortion_limit pop_limit stack_size
 
     total_decoding_time=$(cat $wd/profile/total_decoding_time)
     bleu=$(parse_multeval bleu $wd/multeval.out)
 
-    echo "$stack_size;$pop_limit;$total_decoding_time;$bleu;"
+    echo "$stack_size;$pop_limit;$distortion_limit;$total_decoding_time;$bleu;"
   done | sort -n | awk -F ";" '{ if($2 == 10) print $0; }' | tee /tmp/tmp.txt
 
   # here & now only reports pop_limit 100
   stack_sizes=$(csv_flip_col 1 < /tmp/tmp.txt)
-  total_decoding_times=$(csv_flip_col 3 < /tmp/tmp.txt)
-  bleu_scores=$(csv_flip_col 4 < /tmp/tmp.txt)
+  total_decoding_times=$(csv_flip_col 4 < /tmp/tmp.txt)
+  bleu_scores=$(csv_flip_col 5 < /tmp/tmp.txt)
 
   # one-time stack_size values (assumed to be the same across all)
   echo "$stack_sizes" > $wd_base/stack_sizes.txt
