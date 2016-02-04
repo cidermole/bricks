@@ -169,10 +169,10 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   lang_split $lang_pair
   corpus=$(dirname $moses_ini)/corpus
 
-  # for now, only run a single tuning run version of the experiments
-  if [ "$mini" != "moses.1.ini" -a "$mini" != "moses.6.ini" ]; then
-    continue
-  fi
+  ## for now, only run a single tuning run version of the experiments
+  #if [ "$mini" != "moses.1.ini" -a "$mini" != "moses.6.ini" ]; then
+  #  continue
+  #fi
 
   echo >&2 "Running experiment $moses_ini ..."
 
