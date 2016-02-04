@@ -67,7 +67,9 @@ class MosesIniConverter(MosesIniParser):
 
         # the actual core reason why we parsed all the stuff
         if 'path' in args:
-            feature = Feature(nameStub, featureName, sourceDataPath=args['path'], logger=self.logger)
+            #featureClass = Feature
+            featureClass = self.featureClass(nameStub)
+            feature = featureClass(nameStub, featureName, sourceDataPath=args['path'], logger=self.logger)
 
             # change path to the new targetDataPath-prefixed version
             args['path'] = feature.targetFeaturePath(self.targetDataPath)
@@ -78,23 +80,31 @@ class MosesIniConverter(MosesIniParser):
 
         self.convertedIniLines.append(line)
 
+    def featureClass(self, nameStub):
+        return Feature
+
     def convert(self):
         self.run()
         return '\n'.join(self.convertedIniLines)
 
 
-args = parseArguments()
-args = fixPaths(args)
+def main(mosesIniConverterClass):
+    args = parseArguments()
+    args = fixPaths(args)
 
-logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO)
 
-with open(args.source_moses_ini) as fin:
-    converter = MosesIniConverter(fin, args.output_data_path, logger=logging.getLogger())
-    result = converter.convert()
+    with open(args.source_moses_ini) as fin:
+        converter = mosesIniConverterClass(fin, args.output_data_path, logger=logging.getLogger())
+        result = converter.convert()
 
-with open(args.target_moses_ini, 'w') as fo:
-    fo.write(result)
+    with open(args.target_moses_ini, 'w') as fo:
+        fo.write(result)
 
-# copy the feature data files for features with a given 'path' attribute
-for f in converter.pathedFeatures:
-    converter.pathedFeatures[f].copyData(converter.targetDataPath, args.noOverwrite, args.dryRun)
+    # copy the feature data files for features with a given 'path' attribute
+    for f in converter.pathedFeatures:
+        converter.pathedFeatures[f].copyData(converter.targetDataPath, args.noOverwrite, args.dryRun)
+
+
+if __name__ == '__main__':
+    main(MosesIniConverter)

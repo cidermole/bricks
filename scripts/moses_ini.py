@@ -71,12 +71,15 @@ class Feature:
     def __repr__(self):
         return str((self.nameStub, self.uniqueName, self.sourceDataPath))
 
-    def targetFeaturePath(self, targetDataPath):
+    def targetFeaturePath(self, targetDataPath, targetBaseName=None):
         """
         Absolute target filename (or prefix) for feature data file (or file prefix).
         @param targetDataPath: basedir to copy to
+        @param targetBaseName: optional base filename override
         """
-        return os.path.join(targetDataPath, self.uniqueName, os.path.basename(self.sourceDataPath))
+        if targetBaseName is None:
+            targetBaseName = os.path.basename(self.sourceDataPath)
+        return os.path.join(targetDataPath, self.uniqueName, targetBaseName)
 
     def copyData(self, targetDataPath, noOverwrite=False, dryRun=False):
         """
