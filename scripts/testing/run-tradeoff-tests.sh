@@ -179,8 +179,8 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   echo >&2 "  Loading model data into OS page cache..."
   cache_model_data $moses_ini
 
-  for pop_limit in 200 1000; do
-    for stack_size in 10 100 500 2000 10000; do
+  for pop_limit in 10 20 50 100; do
+    for stack_size in 2 5 10 20 50; do
       wd=$wd_base/$setup/$lang_pair/$mini/$pop_limit/$stack_size
       mkdir -p $wd
       mkdir -p $wd/profile
