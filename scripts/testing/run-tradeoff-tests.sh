@@ -36,7 +36,7 @@ function cache_model_data() {
     # handle directories
     [ -d $f ] && f="$f/*"
 
-    cat "$f" > /dev/null
+    cat $f > /dev/null
   done
 }
 
