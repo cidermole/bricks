@@ -23,7 +23,23 @@ multeval=$TEST_FRAMEWORK/tools/multeval/multeval.sh
 
 function build_moses_remote() {
   # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
-  eval $("$build_moses" -host saxnot -b master -r HEAD)
+
+  ARGS=""
+
+  case "$1" in
+    master)
+      ARGS="-b master -r HEAD"
+      ;;
+    moses30)
+      ARGS="-b RELEASE-3.0 -r HEAD"
+      ;;
+    mmt)
+      ARGS="-b master -r HEAD -s git@github.com:modernmt/mosesdecoder.git"
+      ;;
+    *)
+      ;;
+  esac
+  eval $("$build_moses" -host saxnot $ARGS)
 }
 
 # Fill the OS's disk page cache (hopefully creating equal starting conditions)
@@ -153,7 +169,7 @@ function run_experiment() {
 
 
 
-build_moses_remote
+build_moses_remote moses30
 # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
 
 wd_base=$TEST_FRAMEWORK/wd/$(date +%Y-%m-%d_%H-%M-%S)
