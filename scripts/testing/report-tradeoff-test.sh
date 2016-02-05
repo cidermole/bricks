@@ -53,7 +53,9 @@ for full_mini in $wd_base/*/*/*; do
     bleu=$(parse_multeval bleu $wd/multeval.out)
 
     echo "$stack_size;$pop_limit;$distortion_limit;$total_decoding_time;$bleu;"
-  done | sort -n | awk -F ";" '{ if($2 == 10) print $0; }' | tee /tmp/tmp.txt
+  done | sort -n | tee /tmp/tmp.txt
+
+  #  | awk -F ";" '{ if($2 == 10) print $0; }'
 
   # here & now only reports pop_limit 100
   stack_sizes=$(csv_flip_col 1 < /tmp/tmp.txt)
