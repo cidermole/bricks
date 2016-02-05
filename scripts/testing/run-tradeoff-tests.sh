@@ -8,7 +8,7 @@
 # Author: David Madl <git@abanbytes.eu>
 
 #                              1: cube pruning  -mp: monotone at punctuation
-MOSES_OPTS="--search-algorithm 1 -v 1 --threads 8 -mp"
+MOSES_OPTS="--search-algorithm 1 -v 1 --threads 4 -mp"
 # MUST have verbosity level 1 for timestamps!      -v verbosity
 
 # obtain paths ($TEST_FRAMEWORK, ...)
