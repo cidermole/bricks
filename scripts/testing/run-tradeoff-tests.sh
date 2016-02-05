@@ -168,9 +168,16 @@ function run_experiment() {
 }
 
 
+# build mmt moses version
+build_moses_remote mmt
+mmt_gitrev=$gitrev
+mmt_moses=$moses
+mmt_descriptor=$descriptor
+
 
 build_moses_remote moses30
 # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
+other_moses=$moses
 
 wd_base=$TEST_FRAMEWORK/wd/$(date +%Y-%m-%d_%H-%M-%S)
 mkdir $wd_base
@@ -203,6 +210,15 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   #if [ "$mini" != "moses.1.ini" -a "$mini" != "moses.6.ini" ]; then
   #  continue
   #fi
+
+  # TODO may later be different ID from 1
+  # choose moses binary version depending on what the ini file is called
+  if [ "$mini" == "moses.1.Mmsapt.ini" ]; then
+    moses=$mmt_moses
+  else
+    moses=$other_moses
+  fi
+
 
   echo >&2 "Running experiment $moses_ini ..."
 
