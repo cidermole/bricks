@@ -7,8 +7,8 @@
 #
 # Author: David Madl <git@abanbytes.eu>
 
-#                              1: cube pruning
-MOSES_OPTS="--search-algorithm 1 -v 1 --threads 8"
+#                              1: cube pruning  -mp: monotone at punctuation
+MOSES_OPTS="--search-algorithm 1 -v 1 --threads 8 -mp"
 # MUST have verbosity level 1 for timestamps!      -v verbosity
 
 # obtain paths ($TEST_FRAMEWORK, ...)
@@ -87,7 +87,8 @@ function zip_timestamped_lines() {
 function filter_moses_stderr() {
   gawk '/Start loading text phrase table/ ||
         /Created input-output object/ ||
-        /took [0-9.]+ seconds/'
+        /took [0-9.]+ seconds/ ||
+        /^Name:moses/'
 }
 
 # Obtain decoding time per sentence
@@ -108,7 +109,7 @@ function lowercase() {
 }
 
 function run_experiment() {
-  moses_cmdline="$1"; wd="$2"; corpus="$3"; trg_lang="$4"
+  moses_cmdline="$1"; wd="$2"; corpus="$3"; trg_lang="$4"; ini="$5"
 
   # TODO: run this in docker!
   echo >&2 "  Running moses decoder: $moses_cmdline"
@@ -143,6 +144,7 @@ function run_experiment() {
   echo $gitrev > $wd/moses.rev
   echo $descriptor > $wd/moses.build
   echo $moses_cmdline > $wd/moses.cmdline
+  cp $ini $wd/moses.ini
 }
 
 
@@ -203,7 +205,7 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
         # run moses experiments and partially parse output, throw away the rest
         moses_cmdline="$moses $MOSES_OPTS --cube-pruning-pop-limit $pop_limit --stack $stack_size --distortion-limit $distortion_limit -f $moses_ini"
 
-        run_experiment "$moses_cmdline" $wd $corpus $trg_lang
+        run_experiment "$moses_cmdline" $wd $corpus $trg_lang $mini
       done
     done
   done
