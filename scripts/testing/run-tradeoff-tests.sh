@@ -202,7 +202,7 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   lang_split $lang_pair
   corpus=$(dirname $moses_ini)/corpus
 
-  if [ "$lang_pair" != "de-en" ]; then
+  if [ "$lang_pair" != "fr-en" -o "$mini" != "moses.1.Mmsapt.ini" ]; then
     continue
   fi
 
@@ -225,7 +225,7 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   echo >&2 "  Loading model data into OS page cache..."
   cache_model_data $moses_ini
 
-  for distortion_limit in 6; do
+  for distortion_limit in 1 2 3 4 5 6 7 8 9 10; do
 
     pop_limits=5000
     [ $distortion_limit -eq 6 ] && pop_limits="10 20 50 100 200 500 1000 5000"
