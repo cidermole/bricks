@@ -179,6 +179,10 @@ build_moses_remote moses30
 # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
 other_moses=$moses
 
+echo >&2 "Loading moses binaries into OS page cache ..."
+cat $mmt_moses $other_moses > /dev/null
+echo >&2 ""
+
 wd_base=$TEST_FRAMEWORK/wd/$(date +%Y-%m-%d_%H-%M-%S)
 mkdir $wd_base
 echo >&2 "experiment wd is $wd_base ..."
