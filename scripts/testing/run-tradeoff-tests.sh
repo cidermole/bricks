@@ -8,7 +8,7 @@
 # Author: David Madl <git@abanbytes.eu>
 
 #                              1: cube pruning  -mp: monotone at punctuation
-MOSES_OPTS="--search-algorithm 1 -v 1 --threads 4 -mp"
+MOSES_OPTS="-search-algorithm 1 -v 1 -threads 4 -mp"
 # MUST have verbosity level 1 for timestamps!      -v verbosity
 
 # obtain paths ($TEST_FRAMEWORK, ...)
@@ -206,7 +206,7 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
         mkdir -p $wd/profile
 
         # run moses experiments and partially parse output, throw away the rest
-        moses_cmdline="$moses $MOSES_OPTS --cube-pruning-pop-limit $pop_limit --stack $stack_size --distortion-limit $distortion_limit -f $moses_ini"
+        moses_cmdline="$moses $MOSES_OPTS -cube-pruning-pop-limit $pop_limit -stack $stack_size -distortion-limit $distortion_limit -f $moses_ini"
 
         run_experiment "$moses_cmdline" $wd $corpus $trg_lang $mini
       done
