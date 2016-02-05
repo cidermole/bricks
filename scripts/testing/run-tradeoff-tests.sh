@@ -231,7 +231,9 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
     [ $distortion_limit -eq 6 ] && pop_limits="10 20 50 100 200 500 1000 5000"
 
     for pop_limit in $pop_limits; do
-      for stack_size in $pop_limit; do
+      stack_sizes=$pop_limit
+      [ $pop_limit -ne 5000 ] && stack_sizes="$pop_limit 5000"
+      for stack_size in $stack_sizes; do
         if [ $stack_size -lt $pop_limit ]; then
           # only do stack_size >= pop_limit
           continue
