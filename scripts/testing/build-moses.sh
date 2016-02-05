@@ -23,7 +23,10 @@ fi
 # obtain paths ($TEST_FRAMEWORK, ...)
 . $(dirname $0)/env.sh
 
-branch=master
+#branch=master
+#rev=HEAD
+
+branch=RELEASE-3.0
 rev=HEAD
 
 BUILD_MOSES=$TEST_FRAMEWORK/bricks/scripts/build-moses.sh
