@@ -121,7 +121,7 @@ function run_experiment() {
   timestamp > $wd/profile/timestamp.after_moses
 
   # test for moses failure
-  [ $rv -ne 0 ] && echo >&2 "  error: moses failed!" && return 1
+  [ $rv -ne 0 ] && echo >&2 "  error: moses failed!" && cp moses.stderr $wd/moses.stderr && return 1
 
   # Separate into hypotheses and timestamps
   zip_timestamped_lines test.timestamped.hyp test.hyp $wd/profile/timestamp.before_decoding $wd/profile/timestamp.sents $wd/profile/total_decoding_time
