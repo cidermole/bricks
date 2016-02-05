@@ -159,7 +159,7 @@ function git_replace_remote_and_pull() {
   git remote rm origin
   git remote add origin $MOSES_SRC_REPO
   git fetch >/dev/null 2>&1
-  git checkout $MOSES_BRANCH
+  git checkout origin/$MOSES_BRANCH
   # we have to explicitly pull the correct branch (old git???) - generic git pull leaves us outdated
   git pull origin $MOSES_BRANCH >/dev/null 2>&1
   git checkout $MOSES_REV >/dev/null 2>&1
