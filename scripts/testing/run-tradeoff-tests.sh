@@ -206,7 +206,7 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   lang_split $lang_pair
   corpus=$(dirname $moses_ini)/corpus
 
-  if [ "$lang_pair" != "fr-en" -o "$mini" != "moses.1.Mmsapt.ini" ]; then
+  if [ "$lang_pair" != "fr-en" -o "$mini" == "moses.1.Mmsapt.ini" ]; then
     continue
   fi
 
