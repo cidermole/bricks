@@ -177,7 +177,9 @@ mmt_descriptor=$descriptor
 
 build_moses_remote moses30
 # sets gitrev=3a87b8f, moses=/framework/path/to/moses/bin, descriptor=moses.master.3a87b8f.Release
+other_gitrev=$gitrev
 other_moses=$moses
+other_descriptor=$descriptor
 
 echo >&2 "Loading moses binaries into OS page cache ..."
 cat $mmt_moses $other_moses > /dev/null
@@ -219,8 +221,12 @@ for moses_ini in $TEST_FRAMEWORK/models/*/*/moses.*.ini; do
   # choose moses binary version depending on what the ini file is called
   if [ "$mini" == "moses.1.Mmsapt.ini" ]; then
     moses=$mmt_moses
+    gitrev=$mmt_gitrev
+    descriptor=$mmt_descriptor
   else
     moses=$other_moses
+    gitrev=$other_gitrev
+    descriptor=$other_descriptor
   fi
 
 
