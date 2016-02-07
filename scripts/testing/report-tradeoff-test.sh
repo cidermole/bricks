@@ -74,17 +74,20 @@ for full_mini in $wd_base/*/*/*; do
 
   #rm /tmp/tmp.txt
 
-  gnuplot -e "
-    set term png;
-    set output '$full_mini/time_bleu-vs-pop_limit.png';
-    set datafile separator ';';
-    set key bottom right;
-    set xlabel 'pop\_limit';
-    set ylabel 'decoding\_time [s]';
-    set y2label 'bleu [%]';
-    set y2tics;
-    set autoscale y2;
-    plot '$report' every ::1 using 1:2 with linespoints title 'decoding\_time' axes x1y1, \
-         '$report' every ::1 using 1:3 with linespoints title 'bleu' axes x1y2;
-  "
+  report_gnuplot=0
+  if [ $report_gnuplot -eq 1 ]; then
+    gnuplot -e "
+      set term png;
+      set output '$full_mini/time_bleu-vs-pop_limit.png';
+      set datafile separator ';';
+      set key bottom right;
+      set xlabel 'pop\_limit';
+      set ylabel 'decoding\_time [s]';
+      set y2label 'bleu [%]';
+      set y2tics;
+      set autoscale y2;
+      plot '$report' every ::1 using 1:2 with linespoints title 'decoding\_time' axes x1y1, \
+           '$report' every ::1 using 1:3 with linespoints title 'bleu' axes x1y2;
+    "
+  fi
 done
