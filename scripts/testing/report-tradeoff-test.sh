@@ -42,7 +42,7 @@ for full_mini in $wd_base/*/*/*; do
   # redirect stdout to corresponding report file
   exec > $report
 
-  echo "pop_limit;stack_size;total_decoding_time;bleu;"
+  echo "stack_size;pop_limit;distortion_limit;total_decoding_time;moses_time;bleu;"
   for wd in $full_mini/*/*/*; do
     # iterate stack_sizes tightly
     [ -d $wd ] || continue  # skip non-directories (report files)
@@ -52,7 +52,12 @@ for full_mini in $wd_base/*/*/*; do
     total_decoding_time=$(cat $wd/profile/total_decoding_time)
     bleu=$(parse_multeval bleu $wd/multeval.out)
 
-    echo "$stack_size;$pop_limit;$distortion_limit;$total_decoding_time;$bleu;"
+    before=$(cut -d $'\t' -f 1 $wd/profile/timestamp.before_moses)
+    after=$(cut -d $'\t' -f 1 $wd/profile/timestamp.after_moses)
+    awk "BEGIN { print $after - $before }" > $wd/profile/moses_time
+    moses_time=$(cat $wd/profile/moses_time)
+
+    echo "$stack_size;$pop_limit;$distortion_limit;$total_decoding_time;$moses_time;$bleu;"
   done | sort -n | tee /tmp/tmp.txt
 
   #  | awk -F ";" '{ if($2 == 10) print $0; }'
