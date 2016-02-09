@@ -1,25 +1,25 @@
 #!/bin/bash
 
 #SCRIPT_DIR=$(dirname $(readlink -f "$0"))  # not cross-host
-SCRIPT_DIR=/fs/lofn0/dmadl/mmt/bricks/scripts
+SCRIPT_DIR=/mnt/lofn0/dmadl/mmt/bricks/scripts
 
 HOSTS="$1"
 shift
 
-BRICKS_DIR=/home/dmadl/run-bricks/mmt
-ABS_BRICKS_DIR=/fs/lofn0/dmadl/mmt/run-bricks/mmt
-CONF_DIR=/fs/lofn0/dmadl/mmt/bricks/examples/mmt
+# must be cluster-accessible
+ABS_BRICKS_DIR=/mnt/lofn0/dmadl/mmt/run-bricks/mmt
+CONF_DIR=/mnt/lofn0/dmadl/mmt/bricks/examples/mmt
 
 # symlinked:
 # ln -s /fs/lofn0/dmadl/mmt/run-bricks /home/dmadl/run-bricks
 
-pushd $BRICKS_DIR >/dev/null
+pushd $ABS_BRICKS_DIR >/dev/null
 dir=$(date "+%Y-%m-%d_%H-%M-%S")
 #echo $dir
 mkdir $dir || exit 1
 pushd $dir
 
-. /fs/lofn0/dmadl/mmt/run-bricks/env.sh
+. $ABS_BRICKS_DIR/env.sh  # load bricks.py and redo into PATH
 
 for host in $HOSTS; do
   if [ $# -eq 0 ]; then
@@ -52,7 +52,7 @@ for host in $HOSTS; do
 
   # submit job to host
   ssh $host "
-    . /fs/lofn0/dmadl/mmt/run-bricks/env.sh
+    . $ABS_BRICKS_DIR/env.sh  # load bricks.py and redo into PATH
     cd $ABS_BRICKS_DIR/$dir/$experiment
     nice nohup $SCRIPT_DIR/run-job.sh $dir $experiment >> nohup.out 2>&1 &
   "
