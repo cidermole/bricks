@@ -1,14 +1,18 @@
 #!/bin/bash
 
+#BRICKS=/mnt/lofn0/dmadl/mmt/bricks
+BRICKS=/mnt/saxnot0/dmadl/mmt/bricks
+
 #SCRIPT_DIR=$(dirname $(readlink -f "$0"))  # not cross-host
-SCRIPT_DIR=/mnt/lofn0/dmadl/mmt/bricks/scripts
+SCRIPT_DIR=$BRICKS/scripts
 
 HOSTS="$1"
 shift
 
 # must be cluster-accessible
-ABS_BRICKS_DIR=/mnt/lofn0/dmadl/mmt/run-bricks/mmt
-CONF_DIR=/mnt/lofn0/dmadl/mmt/bricks/examples/mmt
+#ABS_BRICKS_DIR=/mnt/lofn0/dmadl/mmt/run-bricks/mmt
+ABS_BRICKS_DIR=/mnt/saxnot0/dmadl/mmt/run-bricks/mmt
+CONF_DIR=$BRICKS/examples/mmt
 
 # symlinked:
 # ln -s /fs/lofn0/dmadl/mmt/run-bricks /home/dmadl/run-bricks
