@@ -49,6 +49,7 @@ cp "${experiment}.bak/nohup.out" "$experiment"
 rm -rf "${experiment}.bak"
 rm -rf "$WDIR"
 rmdir $(dirname $WDIR)  # remove $dir (the timestamped dir)
+[ -d "${experiment}.bak" ] && rmdir "${experiment}.bak"  # why necessary?
 
 # Re-generate experiment shell scripts with proper paths on the network dir
 # (will unfortunately invalidate redo cache...)
