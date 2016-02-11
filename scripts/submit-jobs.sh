@@ -64,6 +64,7 @@ for host in $HOSTS; do
   done
   popd >/dev/null
   ln -sf $CONF_DIR/$experiment.cfg experiment.cfg
+  # just make sure we can parse config. Actually run in run-job.sh for proper path setup
   bricks.py --setup $setup experiment.cfg
   popd >/dev/null
 
@@ -71,7 +72,7 @@ for host in $HOSTS; do
   ssh $host "
     . $ABS_BRICKS_DIR/env.sh  # load bricks.py and redo into PATH
     cd $ABS_BRICKS_DIR/$dir/$experiment
-    nice nohup $SCRIPT_DIR/run-job.sh $dir $experiment >> nohup.out 2>&1 &
+    nice nohup $SCRIPT_DIR/run-job.sh $dir $experiment $setup >> nohup.out 2>&1 &
   "
 done
 

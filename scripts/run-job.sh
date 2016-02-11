@@ -5,6 +5,7 @@
 
 dir="$1"
 experiment="$2"
+setup="$3"
 
 host=$(hostname)
 
@@ -20,6 +21,9 @@ WDIR=$TMP_BRICKS_DIR/$dir/$experiment
 mkdir -p $(dirname $WDIR)
 cp -r --preserve=links $ODIR $WDIR
 pushd $WDIR >/dev/null
+
+# Generate experiment with proper paths on the local host
+bricks.py --setup $setup experiment.cfg
 
 # run the Experiment.
 redo &
