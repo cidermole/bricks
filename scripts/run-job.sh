@@ -49,3 +49,6 @@ cp "${experiment}.bak/nohup.out" "$experiment"
 rm -rf "${experiment}.bak"
 rm -rf "$WDIR"
 rmdir $(dirname $WDIR)  # remove $dir (the timestamped dir)
+
+# Re-generate experiment link structure with proper paths on the network dir
+bricks.py --setup $setup experiment.cfg
