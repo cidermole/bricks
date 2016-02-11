@@ -441,9 +441,9 @@ class ConfigGenerator(object):
         configSearchPath = config.ConfigSearchPath([searchPath])
 
         if setupFileName is None:
-            setupFileName = 'Setups/%s.cfg' % os.uname()[1].capitalize()
+            setupFileName = '%s.cfg' % os.uname()[1].capitalize()
         # resolve relative path in bricks program root
-        setupFileName = configSearchPath.searchGlobalFile(setupFileName)
+        setupFileName = configSearchPath.searchGlobalFile('Setups/%s.cfg' % setupFileName)
 
         # Create basic Config (not instantiated, i.e. no inheritance or loops)
         self.cfg = config.Config(file(cfgFileName), searchPath=configSearchPath)
