@@ -25,7 +25,7 @@
 srcHash=$(sha1sum input/src | awk '{print $1}')
 trgHash=$(sha1sum input/trg | awk '{print $1}')
 hash=${srcHash}_${trgHash}
-cachedAlignment="{{ brick.cacheDir }}/$hash"
+cachedAlignment="{{ brick.cacheDir }}/${hash}.{{ brick.finalAlignmentModel }}"
 
 # do not have cached version? run parts.
 if [ ! -e "$cachedAlignment" ]; then
