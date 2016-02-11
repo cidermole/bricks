@@ -50,5 +50,6 @@ rm -rf "${experiment}.bak"
 rm -rf "$WDIR"
 rmdir $(dirname $WDIR)  # remove $dir (the timestamped dir)
 
-# Re-generate experiment link structure with proper paths on the network dir
+# Re-generate experiment shell scripts with proper paths on the network dir
+# (will unfortunately invalidate redo cache...)
 bricks.py --setup $setup experiment.cfg
