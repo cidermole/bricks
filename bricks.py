@@ -449,7 +449,8 @@ class ConfigGenerator(object):
         self.cfg = config.Config(file(cfgFileName), searchPath=configSearchPath)
         setup = config.Config(setupFileName, parent=self.cfg, searchPath=configSearchPath)
         # implicit str $BRICKS: path to bricks program root directory
-        #setup.BRICKS = appDir
+        if not 'BRICKS' in setup:
+            setup.BRICKS = appDir
 
         # implicit Mapping $Setup: Experiment can inherit $Setup for machine-specific config keys
         self.cfg.Setup = setup
