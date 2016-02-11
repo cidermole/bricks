@@ -6,6 +6,19 @@ BRICKS=/mnt/saxnot0/dmadl/mmt/bricks
 #SCRIPT_DIR=$(dirname $(readlink -f "$0"))  # not cross-host
 SCRIPT_DIR=$BRICKS/scripts
 
+# capitalize first letter
+setup=$(hostname | sed 's/[^ _-]*/\u&/g').cfg
+
+if [ "${1::1}" == "-" ]; then
+  option="$1"
+  shift
+
+  if [ "$option" == "--setup" ]; then
+    setup="$1"
+    shift
+  fi
+fi
+
 HOSTS="$1"
 shift
 
@@ -51,7 +64,7 @@ for host in $HOSTS; do
   done
   popd >/dev/null
   ln -sf $CONF_DIR/$experiment.cfg experiment.cfg
-  bricks.py experiment.cfg
+  bricks.py --setup $setup experiment.cfg
   popd >/dev/null
 
   # submit job to host
