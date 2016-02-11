@@ -58,9 +58,9 @@ if [ -e "$cachedAlignment" ]; then
 else
   # cache the resulting alignment (if not yet cached)
   if [ -d "{{ brick.cacheDir }}" ]; then
-    gzip -c output/alignment > "$cachedAlignment.tmp"
+    gzip -c output/alignment > "$cachedAlignment.tmp.$$"
     # avoid races where the file is still being created
-    mv "$cachedAlignment.tmp" "$cachedAlignment"
+    mv "$cachedAlignment.tmp.$$" "$cachedAlignment"
   fi
 fi
 
