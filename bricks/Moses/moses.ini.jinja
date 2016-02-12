@@ -40,7 +40,15 @@ cat <<EOF > output/mosesIni
 
 # mapping steps
 [mapping]
-0 T 0
+{# Below, we create "0 T 0" style lines, one for each phrasetable,
+ # to score with either one of the tables (both tables do score for common phrases).
+ # see http://www.statmt.org/moses/?n=Advanced.Models#ntoc7
+ #
+ # An alternative would be to use contrib/combine-ptables
+-#}
+{% for phraseTable in brick.input.phraseTables -%}
+{{ loop.index0 }} T {{ loop.index0 }}
+{% endfor %}
 
 [distortion-limit]
 6
