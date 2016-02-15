@@ -46,7 +46,7 @@ cat <<EOF > output/mosesIni
  #
  # An alternative would be to use contrib/combine-ptables
 -#}
-{% for phraseTable in brick.input.phraseTables -%}
+{% for phraseTable in brick.input.phraseTables|list + brick.input.binaryPhraseTables|list -%}
 {{ loop.index0 }} T {{ loop.index0 }}
 {% endfor %}
 
