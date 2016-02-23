@@ -3,7 +3,7 @@
 # Usage:
 #
 # export PATH=$MOSES_HOME/bin:$PATH
-# build-pt.sh crp.fr crp.en align prefix  # prefix="/path/to/pt/model."
+# build-pt.sh crp.fr crp.en align prefix  # prefix="/path/to/pt/model"
 
 crp1="$1"
 crp2="$2"
