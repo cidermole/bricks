@@ -267,9 +267,9 @@ git_replace_remote_and_pull
 function have_option() {
     # try and make sure we don't exit because of set -e
     if grep -q "$1" Jamroot; then
-        exit 0
+        return 0
     else
-        exit 1
+        return 1
     fi
 }
 
