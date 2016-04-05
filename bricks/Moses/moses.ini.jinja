@@ -74,6 +74,7 @@ LexicalReordering name=BinLexicalReordering{{ loop.index0 }} num-features={{ reo
 KENLM lazyken=0 name=LM{{ loop.index0 }} factor=0 path={{ languageModel }} order={{ languageModel.ngramOrder }}
 {% endfor -%}
 Distortion
+{% block AdditionalFeatures %}{% endblock %}
 
 # dense weights for feature functions
 [weight]
@@ -98,6 +99,7 @@ BinLexicalReordering{{ loop.index0 }}={% for i in range(reorderingTable.numReord
 LM{{ loop.index0 }}= 0.5
 {% endfor -%}
 Distortion0= 0.3
+{% block AdditionalWeights %}{% endblock %}
 
 EOF
 

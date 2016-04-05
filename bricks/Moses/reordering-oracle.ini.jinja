@@ -1,0 +1,7 @@
+{% extends "Moses/moses.ini.jinja" %}
+{% block AdditionalFeatures %}
+ReorderingOracle name=ReorderingOracle0 alignment-src-ref={{ brick.input.alignmentSrcRef }}
+{% endblock %}
+{% block AdditionalWeights %}
+ReorderingOracle0= 1
+{% endblock %}
