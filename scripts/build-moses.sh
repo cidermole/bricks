@@ -374,6 +374,7 @@ if [ "$TOOLSET_GCC" != "" ]; then
   # change XORIGIN to the magic variable
   $(dirname $0)/chrpath -r '$ORIGIN/../lib' $moses_bin_target
   # copy the used lib
+  mkdir -p lib
   cp $TOOLSET_GCC/lib64/libstdc++.so.6 lib/
 fi
 
