@@ -1,0 +1,7 @@
+{% extends "Moses/moses.ini.jinja" %}
+{% block AdditionalFeatures %}
+ConstrainedDecoding name=ConstrainedDecoding0 path={{ brick.input.ref }} soft=1
+{% endblock %}
+{% block AdditionalWeights %}
+ConstrainedDecoding0= 1
+{% endblock %}
