@@ -62,8 +62,12 @@ PhrasePenalty
 PhraseDictionaryMemory name=TranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }}.gz input-factor=0 output-factor=0
 {% endfor %}
 {%- for phraseTable in brick.input.binaryPhraseTables -%}
+{%- if phraseTable.dictionaryType == 'PhraseDictionaryOnDisk' -%}
 PhraseDictionaryOnDisk name=DiskTranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }} input-factor=0 output-factor=0
-{% endfor %}
+{% elif phraseTable.dictionaryType == 'PhraseDictionaryCompact' -%}
+PhraseDictionaryCompact name=DiskTranslationModel{{ loop.index0 }} num-features={{ phraseTable.numPhraseFeatures }} path={{ phraseTable }}/phrase-table.minphr input-factor=0 output-factor=0
+{% endif -%}
+{%- endfor %}
 {%- for reorderingTable in brick.input.reorderingTables -%}
 LexicalReordering name=LexicalReordering{{ loop.index0 }} num-features={{ reorderingTable.numReorderingFeatures }} type={{ reorderingTable.reorderingConfigSpec }}-allff input-factor=0 output-factor=0 path={{ reorderingTable }}.gz
 {% endfor %}
